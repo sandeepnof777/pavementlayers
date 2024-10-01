@@ -1,0 +1,8 @@
+function Name: renderProposal
+layout: web-cool-standard
+download: 
+print: 
+cache: 
+saveToFile: C:\laragon\www\pms.pavementlayers.com/cache/proposals/web-cool/plproposal_196319.pdf
+timeKey: 2024-09-27 11:02:25
+checkProposalChecklist: 1

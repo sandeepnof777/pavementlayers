@@ -1,0 +1,9 @@
+diff a/application/libraries/NotificationLibrary.php b/application/libraries/NotificationLibrary.php	(rejected hunks)
+@@ -24,6 +24,7 @@
+         $this->sid = $_ENV['TWILIO_SID'];
+         $this->token = $_ENV['TWILIO_TOKEN'];
+         $this->twilio_number = $_ENV['TWILIO_NUMBER'];
++        $this->sendgrid_api_key = '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'; // SendGrid API Key
+     }
+ 
+     // Function to send SMS via Twilio
