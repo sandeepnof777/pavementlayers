@@ -44,6 +44,7 @@ div.warning{
 
 #expire_timer_count{
     width: 311px;
+    color:red;
  }
  
 </style>
@@ -123,8 +124,8 @@ div.warning{
                                 <div style="display:none;" id="logging_error" class="error closeonclick"></div>
                                 <div style="display:none;" id="msg_error" class="error closeonclick"></div>
                                 <div style="display:none;" id="msg_success" class="success closeonclick" style="font-color:green;"></div>
-                                <div id="timer_count" class="warning">Too many failed attempts. Please wait <span id="timer"></span> minute then try again.</div>
-                                <div id="expire_timer_count" class="warning">Your Code will expire in  <span id="expire_timer"></span> minute</div>
+                                <div id="timer_count" class="warning">Too many failed attempts. Please wait <span id="timer"></span>, then try again.</div>
+                                <div id="expire_timer_count" class="warning">Your Code will expire in  <span id="expire_timer"></span></div>
 
                             </td>
                         </tr>
@@ -204,27 +205,7 @@ div.warning{
             return false;
         });
 
-        // function startTimer(time) {
-        //     var timerInterval = setInterval(function () {
-        //         if (time >= 0) {
-        //             $("#otpResend").prop('disabled', true).addClass('ui-state-disabled').removeClass('ui-state-default');
-        //             $('#timer').text(time + " seconds then try again."); // Update the timer display
-        //             time--;  // Decrease time                
-        //         } else {
-        //             $("#timer_count").hide();
-        //             $('#timer').text("You can try again now.");  // Show when the time is up
-        //             clearInterval(timerInterval);  // Stop the timer
-        //             $("#otpResend").prop('disabled', false).removeClass('ui-state-disabled ui-button-disabled').addClass('ui-state-default')
-        //             .attr('aria-disabled', 'false');
-        //             $("#sendPasswordEmailHelp form")[0].reset();  // Reset the form if there's one
-        //             var otpResendButton = $("#otpResend");
-        //             if (otpResendButton.length) {
-        //             otpResendButton.css("display", "block");  // Use jQuery to set the display to block
-        //     }
-
-        //         }
-        //     }, 1000);  // Update every second
-        // }
+ 
 
         function startTimer(time) {
         var timerInterval = setInterval(function () {
@@ -236,6 +217,7 @@ div.warning{
         
         if (time >= 0) {
             $("#otpResend").prop('disabled', true).addClass('ui-state-disabled').removeClass('ui-state-default');
+            $("#AuthBtn").prop('disabled', true).addClass('ui-state-disabled').removeClass('ui-state-default'); // Disable AuthBtn
             $('#timer').text(minutes + ":" + seconds + "");  // Update the timer display with minutes:seconds
             time--;  // Decrease time
             $(".resendVsCode").hide();
@@ -245,6 +227,8 @@ div.warning{
             clearInterval(timerInterval);  // Stop the timer
             $("#otpResend").prop('disabled', false).removeClass('ui-state-disabled ui-button-disabled').addClass('ui-state-default')
             .attr('aria-disabled', 'false');
+            $("#AuthBtn").prop('disabled', false).removeClass('ui-state-disabled').addClass('ui-state-default'); // Re-enable AuthBtn
+
             $("#sendPasswordEmailHelp form")[0].reset();  // Reset the form if there's one
             var otpResendButton = $("#otpResend");
             if (otpResendButton.length) {

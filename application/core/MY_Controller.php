@@ -50,6 +50,7 @@ class  MY_Controller extends CI_Controller
         $this->leadSources = $this->system_setting('lead_sources');
         $this->servicePricingTypes = $this->system_setting('service_pricing_types');
         $this->materials = $this->system_setting('materials');
+        $this->madeleine = $this->system_setting('madeleine');
 
         //new lead count sql, if user is logged
         if ($this->session->userdata('accountId')) {

@@ -351,38 +351,56 @@
                 case 'Total':
                     $("#price-label").html('Total Price');
                     $(".amount-container").hide();
+                    $("#madeleine-container").hide();
+
                     break;
                 case 'Materials':
                     $("#price-label").html('Material Price');
                     $("#materials-container").show();
                     $(".amount-container").hide();
+                    $("#madeleine-container").hide();
+
                     break;
                 case 'Season':
                     $("#price-label").html('Season Price');
                     //                                $(".amount-container").hide();
+                    $("#madeleine-container").hide();
+
                     break;
                 case 'Year':
                     $("#price-label").html('Yearly Price');
                     $(".amount-container").hide();
+                    $("#madeleine-container").hide();
+
                     break;
                 case 'Hour':
                     $("#price-label").html('Hourly Price');
                     $(".amount-container").hide();
+                    $("#madeleine-container").hide();
+
                     break;
                 case 'Trip':
                     $("#price-label").html('Price/Trip');
                     $("#amount-label").html('# of Trips');
+                    $("#madeleine-container").show();
+
                     break;
                 case 'Month':
                     $("#price-label").html('Price/Month');
+                   $("#madeleine-container").hide();
+
                     break;
                 case 'Hour':
                     $("#price-label").html('Hourly Price');
                     $("#amount-label").html('# of Hours');
+                    $("#madeleine-container").hide();
+
                     break;
                 case 'Noprice':
                     $(".amount-container").hide();
                     $("#price-container").hide();
+                    $("#madeleine-container").hide();
+
                     break;
                 default:
                     //failsage
@@ -391,11 +409,37 @@
             }
         }
 
+        //code of updatePricingUI2 start
+
+         function updatePricingUI2() {
+             var priceType2 = $("#madeleine").val();
+             console.log("priceType2",priceType2);
+
+            $(".amount-container").show();
+            $("#materials-container").hide();
+            switch (priceType2) {
+                case 'TieredPricing':
+                     $(".amount-container").hide();
+
+                    break;
+              
+                default:
+                    //failsage
+                     break;
+            }
+        }
+
+        //code of updatePricingUI2 close
+
         $("#pricingType").live('change', function () {
             updatePricingUI();
         });
         $("#amountQty, #addPrice, #editPrice").live('keyup', function () {
             updatePricingUI();
+        });
+
+        $("#madeleine").on('change', function () {
+            updatePricingUI2();
         });
 
 

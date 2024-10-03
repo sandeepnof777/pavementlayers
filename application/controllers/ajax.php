@@ -6411,12 +6411,18 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
     {
         $return = array();
         $return['error'] = 0;
+        $madeleine_flag=0;
         $service = $this->em->find('models\Services', $id);
         if (!$service) {
             $return['error'] = 1;
         } else {
             $this->load->database();
             $return['serviceName'] = $service->getServiceName();
+            $service_id = $service->getServiceId();
+            if($service_id=="117"){
+                $madeleine_flag=1; //here check particular service true for flag.
+            }
+
             $customTitle = $this->em->getRepository('models\Service_titles')->findOneBy(array(
                 'company' => $this->account()->getCompany()->getCompanyId(),
                 'service' => $service->getServiceId(),
@@ -6511,13 +6517,24 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
             $fields[] = '<h4 style="text-align: center;">Pricing</h4>';
             $pricingTypeCode = '';
             foreach ($this->servicePricingTypes as $label => $type) {
-                $pricingTypeCode .= '<option value="' . $type . '">' . $label . '</option>';
-            }
+               $pricingTypeCode .= '<option value="' . $type . '">' . $label . '</option>'; 
+             }
             $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox" name="optional" id="optional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
 
-            $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
-            $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
+            if($madeleine_flag==1){
+                $fields[] = '<p class="clearfix"><label>Pricing Unit</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
+
+                $fields[] = '<p class="clearfix" id="madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
+                    $this->madeleine, array(), ' id="madeleine"') . '</p>';
+            }else{
+                $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
+
+            }
+          
+
+            $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material2</label>' . form_dropdown('material',
                     $this->materials, array(), ' id="material"') . '</p>';
+ 
             $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p>';
             $fields[] = '<p class="clearfix amount-container"><label id="amount-label">Frequency</label><input type="text" name="amountQty" class="field-numberFormat" id="amountQty" value="0">
                 </p>
@@ -33305,7 +33322,7 @@ public function otp_validate2() {
             die;
         }
         elseif($failed_otp_count == 2 &&  $time_diff2 < 300 && $account->getEmailOtp() != $this->input->post('otp')) { // 300 seconds = 5 minutes
-            $remaining_time = 300 - $time_diff2;  // Time left for the countdown. Failed attempt timer
+            $remaining_time = 300 - $time_diff2;  // Time left for the countdown. Failed attempt timer 5 min
             echo json_encode(array(
                 'fail' => false,
                 'msg' => "Too many failed attempts. Please wait 10 minutes, then try again.",
@@ -33322,7 +33339,7 @@ public function otp_validate2() {
             ));
             die;
         }else if($account->getEmailOtp() == $this->input->post('otp')) {
-            if ($time_diff <= 600) { //check expire time
+            if ($time_diff <= 600) { //check expire time 10 min
  
                 $this->log_manager->add(\models\ActivityAction::LOGIN, 'User successfully logged in.');
                 //$account->setAuthLogin(1);
@@ -33506,9 +33523,6 @@ public function resendOtp2(){
           
          }
          else{
-                // echo '<pre>';
-                // print_r($this->session->all_userdata());
-                // echo '</pre>';
             echo json_encode(array(
                 'error' => 'User Not Authenticate!',
             ));

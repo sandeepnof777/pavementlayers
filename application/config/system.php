@@ -93,6 +93,10 @@ $config['service_pricing_types'] = [
     'Materials Pricing' => 'Materials',
 ];
 
+$config['madeleine'] = [
+    'SetPrice' => 'Set Price',
+    'TieredPricing' => 'Tiered Pricing',
+];
 $config['materials'] = [
     'Ton' => 'Per Ton',
     'Bag' => 'Per Bag',
