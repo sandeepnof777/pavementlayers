@@ -99,6 +99,17 @@ class Proposal_services extends \MY_Model
      * @ORM\Column (type="string")
      */
     private $map_area_data;
+
+    /**
+     * @ORM\Column (type="string")
+     */
+    private $snow_service_descriptions_price;
+
+    /**
+     * @ORM\Column (type="string", length=255)
+     */
+    private $snow_price_type;
+    
     
     function __construct()
     {
@@ -491,5 +502,41 @@ class Proposal_services extends \MY_Model
         }
 
         return false;
+    }
+
+    //getter & setter for snow_service_descriptions_price
+
+    /**
+     * @return mixed
+     */
+    public function getSnowServiceDescriptionsPrice()
+    {
+        return $this->snow_service_descriptions_price;
+    }
+
+    /**
+     * @param mixed $snow_service_descriptions_price
+     */
+    public function setSnowServiceDescriptionsPrice($snow_service_descriptions_price)
+    {
+        $this->snow_service_descriptions_price = $snow_service_descriptions_price;
+    }
+
+     //getter & setter for snow_price_type
+
+    /**
+     * @return mixed
+     */
+    public function getSnowPriceType()
+    {
+        return $this->snow_price_type;
+    }
+
+    /**
+     * @param mixed $snow_price_type
+     */
+    public function setSnowPriceType($snow_price_type)
+    {
+        $this->snow_price_type = $snow_price_type;
     }
 }

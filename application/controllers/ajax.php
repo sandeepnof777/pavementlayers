@@ -5229,6 +5229,33 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
             $proposal_service->setServiceName($initial_service->getServiceName());
         }
 
+ 
+        // Capture serviceDescriptions and occurrence, and save as JSON
+        $snowPricingType = $this->input->post('snowPricingType');
+        $serviceDescriptions = $this->input->post('serviceDescriptions');
+        $occurrences = $this->input->post('occurrences');
+                // Initialize arrays to hold valid data
+        $validServiceDescriptions = [];
+        $validOccurrences = [];
+        // Loop through both arrays and check for empty values
+        for ($i = 0; $i < count($serviceDescriptions); $i++) {
+            $description = trim($serviceDescriptions[$i]);
+            $occurrence = trim($occurrences[$i]);
+            // Only include non-empty values
+            if (!empty($description) && !empty($occurrence)) {
+                $validServiceDescriptions[] = $description;
+                $validOccurrences[] = $occurrence;
+            }
+        }
+            // Prepare data in JSON format with filtered data
+            $jsonData = json_encode([
+                'serviceDescriptions' => $validServiceDescriptions,
+                'occurrences' => $validOccurrences
+            ]);                    
+        
+            $proposal_service->setSnowServiceDescriptionsPrice($jsonData);
+            $proposal_service->setSnowPriceType($snowPricingType);
+        // Save JSON data to snow_service_descriptions_price field
 
         // Is it tax?
         $proposal_service->setTax(0);
@@ -6523,10 +6550,21 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
 
             if($madeleine_flag==1){
                 $fields[] = '<p class="clearfix"><label>Pricing Unit</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
-
                 $fields[] = '<p class="clearfix" id="madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
                     $this->madeleine, array(), ' id="madeleine"') . '</p>';
-            }else{
+                $fields[] = '<p class="clearfix tiered-container"><label id="description-label">Service Descriptions</label>
+                 <textarea id="serviceDescriptions" name="serviceDescriptions[]" rows="4" cols="50"></textarea>
+                </p>
+                <p class="clearfix tiered-container">
+                <label id="per_occurrence">Per Occurrence</label>
+                <input type="text" class="occurrence" name="occurrences[]"   value="$0" id="occurrence" />                 
+                </p>';
+                //  Add a container for dynamically generated fields 
+                $fields[] = '<div id="dynamic-fields-container"></div>';
+                $fields[] ='<p class="clearfix tiered-container"><button type="button" id="pricing_tier" class="pricing_tier update-button addIcon ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Pricing Tier</span></button></p>';
+                $fields[] ='<p class="error clearfix tiered-container"><div class="error" id="snow_dynmic_container"></div></p>';
+
+            }else{  
                 $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
 
             }
@@ -33432,14 +33470,14 @@ public function resendOtp2(){
     {
         $mobileNo = $account->getCellPhone();
         $maskedNumber = str_repeat('x', 3) . '-' . str_repeat('x', 3) . '-' . substr($mobileNo, -4);
-        $msg =  "A 6-digit code has been sent to ".$maskedNumber." Please enter code above then click Submit.";
+        $msg =  "A 6-digit code has been sent to ".$maskedNumber.".<br> Please enter code above, then click Submit.";
     }
     else {
          $email  = $account->getEmail();
          list($name, $domain) = explode('@', $email);
          // Mask the part before the "x" symbol, leaving the first three characters visible
          $maskedEmail = substr($name, 0, 3) . str_repeat('x', strlen($name) - 3) . '@' . $domain;
-         $msg =  "A 6-digit code has been sent to ".$maskedEmail." Please enter code above then click Submit.";
+         $msg =  "A 6-digit code has been sent to ".$maskedEmail.".<br> Please enter code above, then click Submit.";
     } 
      
     if (!$account->getEmail()) {

@@ -40,6 +40,7 @@
 
 
 <script type="text/javascript">
+
     var site_url = '<?php echo site_url() ?>';
     var bgColor = new Array();
     var textColor = new Array();
@@ -347,60 +348,66 @@
             $("#totalCalculated").val('$' + total);
             $(".amount-container").show();
             $("#materials-container").hide();
+            $(".tiered-container").hide();
+            $("#dynamic-fields-container").hide();
+            $("#snow_dynmic_container").hide();
+
             switch (priceType) {
                 case 'Total':
                     $("#price-label").html('Total Price');
                     $(".amount-container").hide();
                     $("#madeleine-container").hide();
-
+ 
                     break;
                 case 'Materials':
                     $("#price-label").html('Material Price');
                     $("#materials-container").show();
                     $(".amount-container").hide();
                     $("#madeleine-container").hide();
-
+ 
                     break;
                 case 'Season':
                     $("#price-label").html('Season Price');
                     //                                $(".amount-container").hide();
                     $("#madeleine-container").hide();
-
+ 
                     break;
                 case 'Year':
                     $("#price-label").html('Yearly Price');
                     $(".amount-container").hide();
                     $("#madeleine-container").hide();
-
+ 
                     break;
                 case 'Hour':
                     $("#price-label").html('Hourly Price');
                     $(".amount-container").hide();
                     $("#madeleine-container").hide();
-
+ 
                     break;
                 case 'Trip':
                     $("#price-label").html('Price/Trip');
                     $("#amount-label").html('# of Trips');
                     $("#madeleine-container").show();
+                     console.log("Trip case here");
 
                     break;
                 case 'Month':
-                    $("#price-label").html('Price/Month');
-                   $("#madeleine-container").hide();
-
+                     $("#price-label").html('Price/Month');
+                     $("#madeleine-container").hide();
+ 
                     break;
                 case 'Hour':
                     $("#price-label").html('Hourly Price');
                     $("#amount-label").html('# of Hours');
                     $("#madeleine-container").hide();
+ 
 
                     break;
                 case 'Noprice':
                     $(".amount-container").hide();
                     $("#price-container").hide();
                     $("#madeleine-container").hide();
-
+ 
                     break;
                 default:
                     //failsage
@@ -412,14 +419,18 @@
         //code of updatePricingUI2 start
 
          function updatePricingUI2() {
-             var priceType2 = $("#madeleine").val();
-             console.log("priceType2",priceType2);
+            $("#dynamic-fields-container").show();
+             var priceType2 = $("#madeleine").val(); 
+             $("#snow_dynmic_container").hide();
 
             $(".amount-container").show();
             $("#materials-container").hide();
+            $(".tiered-container").hide();
             switch (priceType2) {
                 case 'TieredPricing':
+                     $(".tiered-container").show();
                      $(".amount-container").hide();
+                     $("#price-container").hide();
 
                     break;
               
@@ -431,15 +442,18 @@
 
         //code of updatePricingUI2 close
 
-        $("#pricingType").live('change', function () {
+       // $("#pricingType").live('change', function () {
+                $('body').on('change', '#pricingType', function() {
+
             updatePricingUI();
         });
         $("#amountQty, #addPrice, #editPrice").live('keyup', function () {
             updatePricingUI();
         });
 
-        $("#madeleine").on('change', function () {
-            updatePricingUI2();
+       // $("#madeleine").live('change', function () {
+           $('body').on('change', '#madeleine', function() {
+                updatePricingUI2();
         });
 
 
@@ -693,6 +707,23 @@
             postData.material = $("#material").val();
             postData.excludeFromTotals = $('#exclude_total').prop('checked') ? '1' : 0;
             postData.texts = [];
+
+            //adding value for tiered pricing
+            postData.snowPricingType = $("#madeleine").val();
+            postData.serviceDescriptions = [];
+            postData.occurrences = [];
+
+            // Loop through all dynamically created service descriptions and occurrences
+            $('textarea[name="serviceDescriptions[]"]').each(function () {
+            postData.serviceDescriptions.push($(this).val()); // Collect the value of each description
+            });
+
+            $('input[name="occurrences[]"]').each(function () {
+            postData.occurrences.push($(this).val()); // Collect the value of each occurrence
+            });
+
+
+            //adding value for tiered pricing
             //get texts
             var k = 0;
             $("#addServiceTexts div.text").each(function () {
@@ -941,7 +972,7 @@
                     text: 'Add Service',
                     click: function () {
 
-                        if (tinymce.activeEditor) {
+                         if (tinymce.activeEditor) {
                             $("#textEditorOpen").dialog('open');
                             return false;
                         } else {
@@ -11083,6 +11114,43 @@
             }).catch(swal.noop);
         
     });
+
+
+//add a dynmic generated filed
+$(document).ready(function() {
+    let tierCount = 1; // to count how many tiers are added
+        const maxTiers = 9; // Maximum allowed tiers
+
+    $('body').on('click', '#pricing_tier', function() {
+        // Create dynamic textarea and text field for occurrence
+
+        if (tierCount > maxTiers) {
+            // alert("You can only add up to 10 tiers.");
+            $("#snow_dynmic_container").show();
+            $("#snow_dynmic_container").text("You can only add up to 10 tiers.");
+            return;
+        }
+
+        let newFields = `
+            <div class="clearfix dynamic-tier" id="tier-${tierCount}">
+                <p>
+                    <label for="serviceDescriptions-${tierCount}">Service Descriptions (${tierCount})</label>
+                    <textarea id="serviceDescriptions-${tierCount}" name="serviceDescriptions[]" rows="4" cols="50"></textarea>
+                </p>
+                <p>
+                    <label for="occurrence-${tierCount}">Per Occurrence</label>
+                    <input style="margin-top:5px;" type="text" id="occurrence-${tierCount}" class="occurrence" value="$0" name="occurrences[]">
+                </p>
+            </div>`;
+        
+        // Append the new fields to the dynamic-fields-container div
+        $('#dynamic-fields-container').append(newFields);
+        
+        // Increment the tier count for next addition
+        tierCount++;
+    });
+});
+
 
  
 
