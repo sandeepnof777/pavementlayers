@@ -5719,12 +5719,17 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
     public function getProposalServiceDetails($id)
     {
         $return = array();
+        $madeleine_flag=0;
         $return['error'] = 0;
         $service = $this->em->find('models\Proposal_services', $id);
         if (!$service) {
             $return['error'] = 1;
         } else {
             $this->load->database();
+            $service_id = $service->getInitialService();
+            if($service_id=="117"){
+                $madeleine_flag=1; //here check particular service true for flag.
+             } 
             $return['serviceName'] = $service->getServiceName();
             $return['serviceId'] = $service->getServiceId();
             $texts = array();
@@ -5816,7 +5821,46 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                     $pricingTypeCode .= '<option' . $selected . ' value="' . $type . '">' . $label . '</option>';
                 }
                 $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox"' . $optionChecked . ' name="editOptional" id="editOptional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
-                $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p> ';
+                // $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p> ';
+                if($madeleine_flag==1){
+                    $fields[] = '<p class="clearfix"><label>Pricing Unit</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
+                    $snow_selected = $service->getSnowPriceType();
+                    $fields[] = '<p class="clearfix" id="madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
+                        $this->madeleine, $snow_selected, ' id="madeleine"') . '</p>';
+                    // Fetch service descriptions and occurrences
+                        $serviceValue = $service->getSnowServiceDescriptionsPrice(); // Assuming it returns a JSON object
+                        $serviceData = json_decode($serviceValue, true); // Decode the JSON into an associative array
+
+                        // Generate Service Descriptions and Occurrences
+                        if (!empty($serviceData['serviceDescriptions']) && !empty($serviceData['occurrences'])) {
+                            $serviceDescriptions = $serviceData['serviceDescriptions'];
+                            $occurrences = $serviceData['occurrences'];
+
+                            // Ensure both arrays have the same length
+                            $count = min(count($serviceDescriptions), count($occurrences));
+
+                            for ($i = 0; $i < $count; $i++) {
+                                // Service Descriptions field
+                                $fields[] = '<p class="clearfix tiered-container"><label id="description-label">Service Descriptions ' . ($i + 1) . '</label>
+                                            <textarea id="serviceDescriptions" name="serviceDescriptions[]" rows="4" cols="50">' . htmlspecialchars($serviceDescriptions[$i]) . '</textarea>
+                                            </p>';
+                                // Occurrence field
+                                $fields[] = '<p class="clearfix tiered-container">
+                                            <label id="per_occurrence_' . ($i + 1) . '">Per Occurrence ' . ($i + 1) . '</label>
+                                            <input type="text" class="occurrence" name="occurrences[]" value="' . htmlspecialchars($occurrences[$i]) . '" id="occurrence_' . ($i + 1) . '" />
+                                            </p>';
+                            }
+                        }
+
+                    //  Add a container for dynamically generated fields 
+                    $fields[] = '<div id="dynamic-fields-container"></div>';
+                    $fields[] ='<p class="clearfix tiered-container"><button type="button" id="pricing_tier" class="pricing_tier update-button addIcon ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Pricing Tier</span></button></p>';
+                    $fields[] ='<p class="error clearfix tiered-container"><div class="error" id="snow_dynmic_container"></div></p>';
+    
+                }else{  
+                    $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
+                }
+               
                 $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
                         $this->materials, $service->getMaterial(), ' id="material"') . '</p>';
                 $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type = "text" name = "price" class="field-priceFormat" id = "editPrice" value = "' . $service->getPrice() . '"></p> ';

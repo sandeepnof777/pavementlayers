@@ -1731,6 +1731,7 @@
             }
         });
         $(document).on("click", "#proposal_services .btn-edit", function () {
+            $("#snow_dynmic_container").hide();
             var serviceId = $(this).data('id');
             var companyId = '<?php echo $proposal->getOwner()->getCompanyId(); ?>';
             var proposalId = '<?php echo $proposal->getProposalId(); ?>';
@@ -2039,6 +2040,7 @@
                     $("#editService").dialog('open');
                     $("#editServiceTexts").sortable('refresh');
                     updatePricingUI();
+                    updatePricingUI2();
                     initButtons();
                     initTiptip();
                     reset_service_uploader();
