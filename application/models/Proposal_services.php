@@ -109,7 +109,15 @@ class Proposal_services extends \MY_Model
      * @ORM\Column (type="string", length=255)
      */
     private $snow_price_type;
-    
+    /**
+     * @ORM\Column(type="string")
+     */
+    private $price_ton;
+
+      /**
+     * @ORM\Column(type="string")
+     */
+    private $price_bag;    
     
     function __construct()
     {
@@ -538,5 +546,62 @@ class Proposal_services extends \MY_Model
     public function setSnowPriceType($snow_price_type)
     {
         $this->snow_price_type = $snow_price_type;
+    }
+
+    //getter & setter for price_lot & price_bag
+    public function getPriceTon($number = false)
+    {
+        $s = array('$', ',');
+        $r = array('', '');
+        $price_ton = preg_replace("/[^0-9$,.-]/", "", $this->price_ton);
+        if (!strlen($price_ton)) {
+            $price_ton = '$0';
+        } else {
+            // There could be a single character of '$', so add a zero if it is.
+            if ($price_ton == '$') {
+                $price_ton = '$0';
+            }
+        }
+        if (!$number) {
+            return $price_ton;
+        } else {
+            return str_replace($s, $r, $price_ton);
+        }
+    }
+    public function setPriceTon($price_ton)
+    {
+        $price_ton = preg_replace("/[^0-9$,.-]/", "", $price_ton);
+        if (!strlen($price_ton)) {
+            $price_ton = '$0';
+        }
+        $this->price_ton = $price_ton;
+    }
+    public function getPriceBag($number = false)
+    {
+        $s = array('$', ',');
+        $r = array('', '');
+        $price_bag = preg_replace("/[^0-9$,.-]/", "", $this->price_bag);
+        if (!strlen($price_bag)) {
+            $price_bag = '$0';
+        } else {
+            // There could be a single character of '$', so add a zero if it is.
+            if ($price_bag == '$') {
+                $price_bag = '$0';
+            }
+        }
+
+        if (!$number) {
+            return $price_bag;
+        } else {
+            return str_replace($s, $r, $price_bag);
+        }
+    }
+    public function setPriceBag($price_bag)
+    {
+        $price_bag = preg_replace("/[^0-9$,.-]/", "", $price_bag);
+        if (!strlen($price_bag)) {
+            $price_bag = '$0';
+        }
+        $this->price_bag = $price_bag;
     }
 }

@@ -318,6 +318,7 @@
 
         //funky pricing code
         function updatePricingUI() {
+            $(".ton_bag").hide();
             var priceType = $("#pricingType").val();
             var total;
             if ($("#addPrice").length) {
@@ -360,7 +361,20 @@
  
                     break;
                 case 'Materials':
-                    $("#price-label").html('Material Price');
+                    var matval = $("#material").val();
+                    if(matval=="Ton"){
+                      $("#price-label").html('Per Ton Price');
+                    }
+                    if(matval=="Ton_And_Bag"){
+                        console.log("matlab",matval);
+                       $("#materials-container").hide();
+                       $(".price-container2").show();
+                    }else{
+                        $("#price-container").show();
+                        $(".price-container2").hide();
+
+                    }
+                    console.log("material in");
                     $("#materials-container").show();
                     $(".amount-container").hide();
                     $("#madeleine-container").hide();
@@ -388,7 +402,6 @@
                     $("#price-label").html('Price/Trip');
                     $("#amount-label").html('# of Trips');
                     $("#madeleine-container").show();
-                     console.log("Trip case here");
 
                     break;
                 case 'Month':
@@ -422,7 +435,6 @@
             $("#dynamic-fields-container").show();
              var priceType2 = $("#madeleine").val(); 
              $("#snow_dynmic_container").hide();
-
             $(".amount-container").show();
             $("#materials-container").hide();
             $(".tiered-container").hide();
@@ -431,29 +443,66 @@
                      $(".tiered-container").show();
                      $(".amount-container").hide();
                      $("#price-container").hide();
+                    break;              
+                default:
+                    //failsage
+                     break;
+            }
+        }
+        //code of updatePricingUI2 close
+        //Updating Material pricing start
+           function updateMaterialPricingUI() {
+            $("#dynamic-fields-container").show();
+             var materialPriceType = $("#material").val(); 
+            $("#snow_dynmic_container").hide();
+            $("#materials-container").show();
+            $(".amount-container").hide();
+            $(".tiered-container").hide();
+            switch (materialPriceType) {
+                case 'Ton':
+                     console.log("Per Ton Price",materialPriceType);
+                     $(".ton_bag").hide();
+                     $("#price-container").show();
+                     $("#price-label").html('Per Ton Price');
 
                     break;
+                case 'Bag':
+                     console.log("Per Bag Price",materialPriceType);
+                      $(".ton_bag").hide();
+                      $("#price-label").html('Per Bag Price'); 
+                      $("#price-container").show();
+                break;
+
+                case 'Ton_And_Bag':
+                     console.log("Per Ton and Per Bag",materialPriceType);
+                        $(".ton_bag").show();
+                        $("#price-container").hide();
+                        $(".price-container2").show();
+                 break;
               
                 default:
                     //failsage
                      break;
             }
         }
-
-        //code of updatePricingUI2 close
+        //Updateing Material pricing close
 
        // $("#pricingType").live('change', function () {
                 $('body').on('change', '#pricingType', function() {
 
             updatePricingUI();
         });
-        $("#amountQty, #addPrice, #editPrice").live('keyup', function () {
+        $("#amountQty, #addPrice, #editPrice, #addPrice1, #addPrice2").live('keyup', function () {
             updatePricingUI();
         });
 
        // $("#madeleine").live('change', function () {
            $('body').on('change', '#madeleine', function() {
                 updatePricingUI2();
+        });
+
+        $('body').on('change', '#material', function() {
+                updateMaterialPricingUI();
         });
 
 
@@ -713,6 +762,10 @@
             postData.serviceDescriptions = [];
             postData.occurrences = [];
 
+            //adding value for Per Ton and Per Bag start            
+            postData.tonPrice = $("#addPrice1").val();
+            postData.bagPrice = $("#addPrice2").val();
+            // adding value for Per Ton and Per Bag close
             // Loop through all dynamically created service descriptions and occurrences
             $('textarea[name="serviceDescriptions[]"]').each(function () {
             postData.serviceDescriptions.push($(this).val()); // Collect the value of each description
@@ -11120,11 +11173,12 @@
 
 //add a dynmic generated filed
 $(document).ready(function() {
-    let tierCount = 1; // to count how many tiers are added
-        const maxTiers = 9; // Maximum allowed tiers
+    let tierCount = 2; // to count how many tiers are added
+        const maxTiers = 10; // Maximum allowed tiers
 
     $('body').on('click', '#pricing_tier', function() {
         // Create dynamic textarea and text field for occurrence
+         checkServiceDescriptionsCount();
 
         if (tierCount > maxTiers) {
             // alert("You can only add up to 10 tiers.");
@@ -11155,6 +11209,22 @@ $(document).ready(function() {
 
 
  
+  function checkServiceDescriptionsCount() {
+            // Count the number of textareas with name "serviceDescriptions[]"
+           // var count = $('textarea[name="serviceDescriptions[]"]').length;
+            var count = $('.editServiceFields textarea[name="serviceDescriptions[]"]').length;
+
+            // Check if the count exceeds 10
+            if (count > 10) {
+                // Show the message
+                $("#snow_dynmic_container").show();
+                $("#snow_dynmic_container").text("You can only add up to 10 tiers.");
+
+            }
+        }
+
+        // Call the function initially
+        checkServiceDescriptionsCount();
 
 </script>
 

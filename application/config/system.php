@@ -100,6 +100,7 @@ $config['madeleine'] = [
 $config['materials'] = [
     'Ton' => 'Per Ton',
     'Bag' => 'Per Bag',
+    'Ton_And_Bag' => 'Per Ton and Per Bag',
 ];
 
 //key is the label - hour and am/pm generally and the value is the hour in the 24 hour format, with leading zeros
