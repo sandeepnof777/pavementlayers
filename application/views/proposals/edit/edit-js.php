@@ -318,13 +318,21 @@
 
         //funky pricing code
         function updatePricingUI() {
-            $(".ton_bag").hide();
+             $(".per_bag").hide();
+             $(".per_ton").hide();
+             $("#snow_dynmic_container").hide();
+           console.log("call by updatePricingUI");
             var priceType = $("#pricingType").val();
-            var total;
+            console.log("priceType value",priceType);
+             var total;
+            var flag; // 0 for add , 1 for edit
             if ($("#addPrice").length) {
+                flag=0;
                 total = $("#addPrice").val();
             } else {
-                total = $("#editPrice").val();
+
+                     flag=1;
+                     total = $("#editPrice").val();
             }
             total = total.replace('$', '');
             total = total.replace(/,/g, '');
@@ -361,23 +369,41 @@
  
                     break;
                 case 'Materials':
-                    var matval = $("#material").val();
-                    if(matval=="Ton"){
-                      $("#price-label").html('Per Ton Price');
-                    }
-                    if(matval=="Ton_And_Bag"){
-                        console.log("matlab",matval);
-                       $("#materials-container").hide();
-                       $(".price-container2").show();
-                    }else{
-                        $("#price-container").show();
-                        $(".price-container2").hide();
-
-                    }
-                    console.log("material in");
                     $("#materials-container").show();
                     $(".amount-container").hide();
                     $("#madeleine-container").hide();
+                    $('p.amount-container').hide(); 
+                    var matval = $("#material").val();
+                    if(matval=="Ton"){
+                    //  $("#price-label").html('Per Ton Price');
+                      $('#price-container').css('display', (flag === 1) ? 'none' : 'block');
+                      $('.per_ton').css('display', (flag === 1) ? 'block' : 'none');
+                      console.log("perton");
+                      console.log("flag",flag);
+                      $("#price-container").hide();
+                      $("#madeleine-container").hide();
+                       $('.per_ton').show();
+                      $('.per_bag').hide();
+
+                     }
+                    else if(matval=="Ton_And_Bag"){
+                       $("#materials-container").hide();
+                       $(".price-container2").show();
+                       $('#price-container').css('display', (flag === 1) ? 'none' : 'block');
+ 
+                    }else if(matval=="Bag"){
+                        // $("#price-container").show();
+                        // $(".price-container2").hide();
+                         $("#madeleine-container").hide();
+                         console.log("flagval",flag);
+                          $('#price-container').css('display', (flag === 1) ? 'none' : 'block');
+                          $('.per_bag').css('display', (flag === 1) ? 'block' : 'none');
+                          $("#price-container").hide();
+                          $('.per_bag').show();
+                          $('.per_ton').hide();
+ 
+                    } 
+                        
  
                     break;
                 case 'Season':
@@ -434,10 +460,17 @@
          function updatePricingUI2() {
             $("#dynamic-fields-container").show();
              var priceType2 = $("#madeleine").val(); 
-             $("#snow_dynmic_container").hide();
-            $(".amount-container").show();
-            $("#materials-container").hide();
-            $(".tiered-container").hide();
+             var pricingType = $("#pricingType").val();
+             if(pricingType=="Materials"){
+                 $("#materials-container").show();
+                 $(".amount-container").hide();
+                 }else{
+                     $("#materials-container").hide();
+                     $(".amount-container").show();
+                 }
+                 $("#snow_dynmic_container").hide();
+                 $(".tiered-container").hide();
+
             switch (priceType2) {
                 case 'TieredPricing':
                      $(".tiered-container").show();
@@ -452,31 +485,36 @@
         //code of updatePricingUI2 close
         //Updating Material pricing start
            function updateMaterialPricingUI() {
+            console.log("call by updateMaterialPricingUI");
             $("#dynamic-fields-container").show();
              var materialPriceType = $("#material").val(); 
+             console.log("materialPriceType",materialPriceType);
             $("#snow_dynmic_container").hide();
             $("#materials-container").show();
             $(".amount-container").hide();
             $(".tiered-container").hide();
+             $("#price-container").hide(); 
+
             switch (materialPriceType) {
                 case 'Ton':
-                     console.log("Per Ton Price",materialPriceType);
-                     $(".ton_bag").hide();
-                     $("#price-container").show();
-                     $("#price-label").html('Per Ton Price');
+                     console.log("Per Ton Price6",materialPriceType);
+                      $(".per_ton").show();
+                      $(".per_bag").hide();
 
                     break;
                 case 'Bag':
                      console.log("Per Bag Price",materialPriceType);
-                      $(".ton_bag").hide();
-                      $("#price-label").html('Per Bag Price'); 
-                      $("#price-container").show();
+                      $(".per_ton").hide();
+                      $(".per_bag").show();
+
                 break;
 
                 case 'Ton_And_Bag':
-                     console.log("Per Ton and Per Bag",materialPriceType);
-                        $(".ton_bag").show();
-                        $("#price-container").hide();
+                   var perBagValue =  $("#editPrice2").val();
+                       var perTonValue =  $("#editPrice1").val();
+                     console.log("Per Ton and Per Bag",perTonValue + " and " +perBagValue);
+                        $(".per_ton").show();
+                        $(".per_bag").show();
                         $(".price-container2").show();
                  break;
               
@@ -492,8 +530,8 @@
 
             updatePricingUI();
         });
-        $("#amountQty, #addPrice, #editPrice, #addPrice1, #addPrice2").live('keyup', function () {
-            updatePricingUI();
+        $("#amountQty, #addPrice, #editPrice, #addPrice1, #addPrice2,#editPrice1,#editPrice2").live('keyup', function () {
+             updatePricingUI();
         });
 
        // $("#madeleine").live('change', function () {
@@ -501,9 +539,19 @@
                 updatePricingUI2();
         });
 
+
+
         $('body').on('change', '#material', function() {
                 updateMaterialPricingUI();
         });
+
+        $('.btn-edit').on('click', function(event) {
+           event.preventDefault(); // Prevent the default anchor behavior
+           console.log("calling when edit");
+           updatePricingUI2();
+
+ 
+      });
 
 
         $('#serviceCategory option').attr('selected', false);
@@ -1024,7 +1072,6 @@
                     class: 'addServiceFinish update-button addIcon',
                     text: 'Add Service',
                     click: function () {
-
                          if (tinymce.activeEditor) {
                             $("#textEditorOpen").dialog('open');
                             return false;
@@ -1612,6 +1659,10 @@
             postData.texts = [];
             postData.text_ids = [];
             postData.images = [];
+            //adding value for Per Ton and Per Bag start            
+            postData.tonPrice = $("#editPrice1").val();
+            postData.bagPrice = $("#editPrice2").val();
+            // adding value for Per Ton and Per Bag close
             //get texts
             var k = 0;
             $("#editServiceTexts div.text").each(function () {
@@ -1788,7 +1839,7 @@
             var serviceId = $(this).data('id');
             var companyId = '<?php echo $proposal->getOwner()->getCompanyId(); ?>';
             var proposalId = '<?php echo $proposal->getProposalId(); ?>';
-            $(this).trigger('mouseout');
+             $(this).trigger('mouseout');
 
 
             $('.btn-edit').tipTip('destroy');
@@ -1804,6 +1855,7 @@
                     $("#editServiceTexts").html('');
                     $("#editServiceFields").html('');
                     $("#editServiceId").val(data.serviceId);
+ 
                     //populate popup
                     $("#editServiceName").html(data.serviceName);
                     //add the texts

@@ -1456,7 +1456,7 @@
 
             #offcanvasRight {
                 width: 90%;
-                height: 600px !important;
+                height: 670px !important;
             }
 
             #offcanvasRight3 {
@@ -5346,7 +5346,7 @@ $print_pdf_url = site_url('proposals/live/preview/' . $print_layout . '/plpropos
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="signature_company" class="form-label">Company Name</label>
-                                    <input type="text" required name="company" class="form-control sign_popup_inputs"
+                                    <input type="text" name="company" class="form-control sign_popup_inputs"
                                            value=""
                                            id="signature_company" placeholder="Enter Company Name">
                                     <div class="invalid-feedback"> Please enter Company Name</div>
@@ -5354,7 +5354,7 @@ $print_pdf_url = site_url('proposals/live/preview/' . $print_layout . '/plpropos
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="signature_title" class="form-label">Title</label>
-                                    <input type="text" required name="signature_title"
+                                    <input type="text"  name="signature_title"
                                            class="form-control sign_popup_inputs"
                                            value=""
                                            id="signature_title" placeholder="Enter Title">
