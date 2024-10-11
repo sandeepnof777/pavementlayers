@@ -4196,25 +4196,78 @@ $print_pdf_url = site_url('proposals/live/preview/' . $print_layout . '/plpropos
                                             <tbody>
                                             <?php
                                             $k = 0;
-                                            foreach ($services as $service) {
-                                                if (in_array($service->getPricingType(), $timeMaterialServices)) {
+                                            $total=0;
+                                           // echo "<pre>";print_r($services);
+                                         
+                                            $newServicearray = array();
+                                            $counter = 0; // Counter to manage array keys
+
+                                            foreach ($services as $key => $newservice) {
+                                                if ($newservice->getMaterial() == "Ton_And_Bag") {
+                                                    // Create separate array entry for 'Ton'
+                                                    $newServicearray[$counter]['getServiceName'] = $newservice->getServiceName();
+                                                    $newServicearray[$counter]['getPrice'] = $newservice->getPriceTon();
+                                                    $newServicearray[$counter]['getPricingType'] = $newservice->getPricingType();
+                                                    $newServicearray[$counter]['getMaterial'] = 'Ton';
+                                                    $newServicearray[$counter]['getTon'] = $newservice->getPriceTon();
+                                                    $counter++;
+                                                    // Create separate array entry for 'Bag'
+                                                    $newServicearray[$counter]['getServiceName'] = $newservice->getServiceName();
+                                                    $newServicearray[$counter]['getPrice'] =  $newservice->getPriceBag();
+                                                    $newServicearray[$counter]['getPricingType'] = $newservice->getPricingType();
+                                                    $newServicearray[$counter]['getMaterial'] = 'Bag';
+                                                    $newServicearray[$counter]['getBag'] = $newservice->getPriceBag();
+                                                    $counter++;
+                                                } else {
+                                                    // Add as normal when 'Ton_And_Bag' is not present
+                                                    $newServicearray[$counter]['getServiceName'] = $newservice->getServiceName();
+                                                    $newServicearray[$counter]['getPrice'] = $newservice->getPrice();
+                                                    $newServicearray[$counter]['getPricingType'] = $newservice->getPricingType();
+                                                    $newServicearray[$counter]['getMaterial'] = $newservice->getMaterial();
+                                                    // Check if Ton and Bag prices are available and add them
+                                                    if ($newservice->getMaterial() == "Ton") {
+                                                        $newServicearray[$counter]['getTon'] = $newservice->getPriceTon();
+                                                    }
+                                                    if ($newservice->getMaterial() == "Bag") {
+                                                        $newServicearray[$counter]['getBag'] = $newservice->getPriceBag();
+                                                    }
+                                                    $counter++;
+                                                }
+                                            }
+                                            // echo "<pre>";
+                                            // print_r($newServicearray);
+                                            // die;                                            
+                                            foreach ($newServicearray as $service) {
+                                                if (in_array($service['getPricingType'], $timeMaterialServices)) {
                                                     $k++;
                                                     $class = ($k % 2) ? 'odd' : '';
-                                                    ?>
+                                                    ?> 
                                                     <tr>
                                                         <td class="<?php echo $class; ?>"><?php echo $k; ?></td>
-                                                        <td class="<?php echo $class; ?>"><?php echo $service->getServiceName(); ?></td>
+                                                        <td class="<?php echo $class; ?>"><?php echo $service['getServiceName']; ?></td>
                                                         <td align="right" class="<?php echo $class; ?>">$<?php
-                                                            $price = (float)str_replace($s, $r, $service->getPrice());
+                                                            $price = (float)str_replace($s, $r, $service['getPrice']);
                                                             echo @number_format($price, 2);
                                                             ?></td>
                                                         <td align="right" class="<?php echo $class; ?>">
-                                                            Per <?php echo ($service->getPricingType() != 'Materials') ? $service->getPricingType() : $service->getMaterial(); ?></td>
+                                                            Per <?php echo ($service['getPricingType'] != 'Materials') ? $service['getPricingType'] : $service['getMaterial']; ?></td>
                                                     </tr>
-                                                    <?php
+                                                    <?php 
+                                                     $price = (float)str_replace($s, $r, $service['getPrice']);
+                                                     $total = $price+$total;                                                    
                                                 }
                                             }
                                             ?>
+                                             <?php if (!isset($hideTotalPrice) || !$hideTotalPrice) { ?>
+                                                <tr>
+                                                        <td></td>
+                                                        <td align="right"><b>Total</b></td>
+                                                        <td align="right"><b>$<?php
+                                                           // $price = (float)str_replace($s, $r, $service->getPrice());
+                                                            echo @number_format($total, 2);
+                                                            ?></b></td>
+                                                </tr>
+                                            <?php } ?>
                                             </tbody>
                                         </table>
                                     <?php } ?>
@@ -4329,6 +4382,24 @@ $print_pdf_url = site_url('proposals/live/preview/' . $print_layout . '/plpropos
                 <!-- END INVOICE -->
                 <!-- BEGIN INVOICE -->
 
+                <?php
+                                                    function formatPhoneNumber($phoneNumber) {
+                                                        // Remove any non-digit characters (if there are any)
+                                                        $phoneNumber = preg_replace('/[^0-9]/', '', $phoneNumber);
+                                                        
+                                                        // Ensure the phone number is exactly 10 digits long
+                                                        if (strlen($phoneNumber) === 10) {
+                                                            // Format the phone number as 902-356-5889
+                                                            return preg_replace('/(\d{3})(\d{3})(\d{4})/', '$1-$2-$3', $phoneNumber);
+                                                        }
+
+                                                        // Return the original phone number if it's not 10 digits
+                                                        return $phoneNumber;
+                                                    }
+
+                                                    // Usage in the button
+                                                    ?>
+
                 <div class="grid invoice pdf-height page_break page_break_before mg-left-55" style="padding-top: 10px;"
                      id="signature" data-page-id="signature">
                     <div class="grid-body">
@@ -4424,14 +4495,12 @@ $print_pdf_url = site_url('proposals/live/preview/' . $print_layout . '/plpropos
                                                     data-company-name="<?php echo ($clientSig) ? $clientSig->getCompanyName() : $proposal->getClient()->getClientAccount()->getName(); ?>"
                                                     data-title="<?php echo ($clientSig) ? $clientSig->getTitle() : $proposal->getClient()->getTitle(); ?>"
                                                     data-email="<?php echo ($clientSig) ? $clientSig->getEmail() : $proposal->getClient()->getEmail(); ?>"
-
                                                     data-address="<?php echo ($clientSig) ? $clientSig->getAddress() : $proposal->getClient()->getAddress(); ?>"
                                                     data-city="<?php echo ($clientSig) ? $clientSig->getCity() : $proposal->getClient()->getCity(); ?>"
                                                     data-state="<?php echo ($clientSig) ? $clientSig->getState() : $proposal->getClient()->getState(); ?>"
                                                     data-zip="<?php echo ($clientSig) ? $clientSig->getZip() : $proposal->getClient()->getZip(); ?>"
-                                                    data-cell-phone="<?php echo ($clientSig) ? $clientSig->getCellPhone() : $proposal->getClient()->getCellPhone(); ?>"
-                                                    data-office-phone="<?php echo ($clientSig) ? $clientSig->getOfficePhone() : $proposal->getClient()->getBusinessPhone(true); ?>"
-
+                                                    data-cell-phone="<?php echo ($clientSig) ? formatPhoneNumber($clientSig->getCellPhone()) : formatPhoneNumber($proposal->getClient()->getCellPhone()); ?>"
+                                                    data-office-phone="<?php echo ($clientSig) ? formatPhoneNumber($clientSig->getOfficePhone()) : formatPhoneNumber($proposal->getClient()->getBusinessPhone(true)); ?>"
                                                     data-type="client" data-bs-toggle="offcanvas"
                                                     data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"
                                                     class="btn btn-secondary btn-sm print_hide <?= $show_client_sign_btn; ?>">
@@ -4576,6 +4645,8 @@ $print_pdf_url = site_url('proposals/live/preview/' . $print_layout . '/plpropos
                                                 $company_lastname = $companySig->getLastName();
                                             }
                                             ?>
+                                             
+
 
                                             <button type="button" id="add_signature_company"
                                                     data-firstname="<?php echo ($companySig) ? $company_firstname : $proposal->getOwner()->getFirstName(); ?>"
@@ -4588,11 +4659,9 @@ $print_pdf_url = site_url('proposals/live/preview/' . $print_layout . '/plpropos
                                                     data-city="<?php echo ($companySig) ? $companySig->getCity() : $proposal->getOwner()->getCity(); ?>"
                                                     data-state="<?php echo ($companySig) ? $companySig->getState() : $proposal->getOwner()->getState(); ?>"
                                                     data-zip="<?php echo ($companySig) ? $companySig->getZip() : $proposal->getOwner()->getZip(); ?>"
-                                                    data-cell-phone="<?php echo ($companySig) ? $companySig->getCellPhone() : $proposal->getOwner()->getCellPhone(); ?>"
-                                                    data-office-phone="<?php echo ($companySig) ? $companySig->getOfficePhone() : ''; ?>"
-
-
-                                                    data-type="company" data-bs-toggle="offcanvas"
+                                                    data-cell-phone="<?php echo ($companySig) ? formatPhoneNumber($companySig->getCellPhone()) : formatPhoneNumber($proposal->getOwner()->getCellPhone()); ?>"
+                                                    data-office-phone="<?php echo ($companySig) ? formatPhoneNumber($companySig->getOfficePhone()) : ''; ?>"
+                                                     data-type="company" data-bs-toggle="offcanvas"
                                                     data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"
                                                     class="btn btn-secondary btn-sm print_hide <?= $show_company_sign_btn; ?>">
                                                 Sign
@@ -4601,6 +4670,7 @@ $print_pdf_url = site_url('proposals/live/preview/' . $print_layout . '/plpropos
                                             <?php }?>
                                         </div>
 
+                                                   
 
                                         <div class="signee-details">
 
@@ -4708,14 +4778,12 @@ $print_pdf_url = site_url('proposals/live/preview/' . $print_layout . '/plpropos
                                                     data-company-name="<?php echo ($clientSig) ? $clientSig->getCompanyName() : $proposal->getClient()->getClientAccount()->getName(); ?>"
                                                     data-title="<?php echo ($clientSig) ? $clientSig->getTitle() : $proposal->getClient()->getTitle(); ?>"
                                                     data-email="<?php echo ($clientSig) ? $clientSig->getEmail() : $proposal->getClient()->getEmail(); ?>"
-
                                                     data-address="<?php echo ($clientSig) ? $clientSig->getAddress() : $proposal->getClient()->getAddress(); ?>"
                                                     data-city="<?php echo ($clientSig) ? $clientSig->getCity() : $proposal->getClient()->getCity(); ?>"
                                                     data-state="<?php echo ($clientSig) ? $clientSig->getState() : $proposal->getClient()->getState(); ?>"
                                                     data-zip="<?php echo ($clientSig) ? $clientSig->getZip() : $proposal->getClient()->getZip(); ?>"
-                                                    data-cell-phone="<?php echo ($clientSig) ? $clientSig->getCellPhone() : $proposal->getClient()->getCellPhone(); ?>"
-                                                    data-office-phone="<?php echo ($clientSig) ? $clientSig->getOfficePhone() : ''; ?>"
-
+                                                    data-cell-phone="<?php echo ($clientSig) ? formatPhoneNumber($clientSig->getCellPhone()) : formatPhoneNumber($proposal->getClient()->getCellPhone()); ?>"
+                                                    data-office-phone="<?php echo ($clientSig) ? formatPhoneNumber($clientSig->getOfficePhone()) : ''; ?>"
                                                     data-type="other" data-bs-toggle="offcanvas"
                                                     data-bs-target="#offcanvasRight" aria-controls="offcanvasRight"
                                                     class="btn btn-secondary btn-sm print_hide ">
@@ -5423,16 +5491,17 @@ $print_pdf_url = site_url('proposals/live/preview/' . $print_layout . '/plpropos
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="signature_cell_phone" class="form-label">Cell Phone</label>
-                                    <input type="text" required name="signature_cell_phone" pattern="^\d{3}-\d{3}-\d{4}$"
+                                    <input type="text" required name="signature_cell_phone"
+                                           pattern="^\d{3}-\d{3}-\d{4}$"
                                            class="form-control sign_popup_inputs"
                                            value=""
                                            id="signature_cell_phone" placeholder="Enter Cell Phone">
-                                    <div class="invalid-feedback"> Please enter Cell Phone</div>
+                                    <div class="invalid-feedback"> Please enter valid Cell Phone</div>
 
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="signature_office_phone" class="form-label">Office Phone</label>
-                                    <input type="text" required name="signature_office_phone"
+                                    <input type="text" name="signature_office_phone"
                                            class="form-control sign_popup_inputs" pattern="^\d{3}-\d{3}-\d{4}$"
                                            value=""
                                            id="signature_office_phone" placeholder="Enter Office Phone">

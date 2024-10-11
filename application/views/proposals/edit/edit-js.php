@@ -7,6 +7,7 @@
             $("#workOrder-preview-iframe").show();
             $("#estimatePreviewDialog").dialog().parent().css('height', '85%');
         }
+    var edit_flag = 0; // Global variable to track the edit flag
 </script>
 <div id="workOrderDialog" title="Preview Work Order" style="display:none;">
 <p style="font-weight: bold;width: 700px;position: absolute;font-size: 14px;top: 3px;"><span style="position:absolute"><span style="display: block; float: left;  color: #595959; text-align: left; margin-right: 10px;"><i class="fa fw fa-file-pdf-o"></i> Project: </span><span class="shadowz" style="float:left"><a class="dialog_project_name" href="#" ><?=$proposal->getProjectName();?></a></span></span><br/>
@@ -318,11 +319,13 @@
 
         //funky pricing code
         function updatePricingUI() {
+            console.log("edit_flag:updatePricingUI",edit_flag);
              $(".per_bag").hide();
              $(".per_ton").hide();
-             $("#snow_dynmic_container").hide();
+             $(".snow_dynmic_container").hide();
            console.log("call by updatePricingUI");
             var priceType = $("#pricingType").val();
+            
             console.log("priceType value",priceType);
              var total;
             var flag; // 0 for add , 1 for edit
@@ -354,51 +357,54 @@
 
             total = addCommas(parseFloat(total) * parseFloat(qty));
 
-            $("#totalCalculated").val('$' + total);
-            $(".amount-container").show();
+            $("#totalCalculated").val('$' + total);        
+           // $(".amount-container").show();
             $("#materials-container").hide();
             $(".tiered-container").hide();
-            $("#dynamic-fields-container").hide();
-            $("#snow_dynmic_container").hide();
+            $(".dynamic-fields-container").hide();
+            $(".snow_dynmic_container").hide();
 
             switch (priceType) {
                 case 'Total':
                     $("#price-label").html('Total Price');
                     $(".amount-container").hide();
-                    $("#madeleine-container").hide();
+                    $(".madeleine-container").hide();
  
                     break;
                 case 'Materials':
                     $("#materials-container").show();
                     $(".amount-container").hide();
-                    $("#madeleine-container").hide();
+                    $(".madeleine-container").hide();
                     $('p.amount-container').hide(); 
-                    var matval = $("#material").val();
+
+                   // var matval = $("#material").val();
+                    var matval = (edit_flag === 1) ? $("#edit_material_type").val() : $("#material").val();
                     if(matval=="Ton"){
+                        console.log("toncase",edit_flag);
                     //  $("#price-label").html('Per Ton Price');
-                      $('#price-container').css('display', (flag === 1) ? 'none' : 'block');
-                      $('.per_ton').css('display', (flag === 1) ? 'block' : 'none');
+                        $('.amount-container').css('display', (edit_flag === 1) ? 'none' : 'block');
+                        $('.per_ton').css('display', (flag === 1) ? 'block' : 'none');
                       console.log("perton");
                       console.log("flag",flag);
-                      $("#price-container").hide();
-                      $("#madeleine-container").hide();
+                       $(".price-container3").hide();
+                       $(".madeleine-container").hide();
                        $('.per_ton').show();
-                      $('.per_bag').hide();
+                       $('.per_bag').hide();
 
                      }
                     else if(matval=="Ton_And_Bag"){
                        $("#materials-container").hide();
                        $(".price-container2").show();
-                       $('#price-container').css('display', (flag === 1) ? 'none' : 'block');
+                       // $('.price-container3').css('display', (flag === 1) ? 'none' : 'block');
  
                     }else if(matval=="Bag"){
                         // $("#price-container").show();
                         // $(".price-container2").hide();
-                         $("#madeleine-container").hide();
+                         $(".madeleine-container").hide();
                          console.log("flagval",flag);
-                          $('#price-container').css('display', (flag === 1) ? 'none' : 'block');
-                          $('.per_bag').css('display', (flag === 1) ? 'block' : 'none');
-                          $("#price-container").hide();
+                           $('.amount-container').css('display', (edit_flag === 1) ? 'none' : 'block');
+                          // $('.per_bag').css('display', (flag === 1) ? 'block' : 'none');
+                          $(".price-container3").hide();
                           $('.per_bag').show();
                           $('.per_ton').hide();
  
@@ -409,43 +415,43 @@
                 case 'Season':
                     $("#price-label").html('Season Price');
                     //                                $(".amount-container").hide();
-                    $("#madeleine-container").hide();
+                    $(".madeleine-container").hide();
  
                     break;
                 case 'Year':
                     $("#price-label").html('Yearly Price');
                     $(".amount-container").hide();
-                    $("#madeleine-container").hide();
+                    $(".madeleine-container").hide();
  
                     break;
                 case 'Hour':
                     $("#price-label").html('Hourly Price');
                     $(".amount-container").hide();
-                    $("#madeleine-container").hide();
+                    $(".madeleine-container").hide();
  
                     break;
                 case 'Trip':
                     $("#price-label").html('Price/Trip');
                     $("#amount-label").html('# of Trips');
-                    $("#madeleine-container").show();
+                    $(".madeleine-container").show();
 
                     break;
                 case 'Month':
                      $("#price-label").html('Price/Month');
-                     $("#madeleine-container").hide();
+                     $(".madeleine-container").hide();
  
                     break;
                 case 'Hour':
                     $("#price-label").html('Hourly Price');
                     $("#amount-label").html('# of Hours');
-                    $("#madeleine-container").hide();
+                    $(".madeleine-container").hide();
  
 
                     break;
                 case 'Noprice':
                     $(".amount-container").hide();
                     $("#price-container").hide();
-                    $("#madeleine-container").hide();
+                    $(".madeleine-container").hide();
  
                     break;
                 default:
@@ -458,7 +464,7 @@
         //code of updatePricingUI2 start
 
          function updatePricingUI2() {
-            $("#dynamic-fields-container").show();
+            $(".dynamic-fields-container").show();
              var priceType2 = $("#madeleine").val(); 
              var pricingType = $("#pricingType").val();
              if(pricingType=="Materials"){
@@ -468,14 +474,14 @@
                      $("#materials-container").hide();
                      $(".amount-container").show();
                  }
-                 $("#snow_dynmic_container").hide();
+                 $(".snow_dynmic_container").hide();
                  $(".tiered-container").hide();
 
             switch (priceType2) {
                 case 'TieredPricing':
                      $(".tiered-container").show();
                      $(".amount-container").hide();
-                     $("#price-container").hide();
+                     $(".price-container3").hide();
                     break;              
                 default:
                     //failsage
@@ -485,15 +491,15 @@
         //code of updatePricingUI2 close
         //Updating Material pricing start
            function updateMaterialPricingUI() {
-            console.log("call by updateMaterialPricingUI");
-            $("#dynamic-fields-container").show();
-             var materialPriceType = $("#material").val(); 
-             console.log("materialPriceType",materialPriceType);
-            $("#snow_dynmic_container").hide();
-            $("#materials-container").show();
-            $(".amount-container").hide();
-            $(".tiered-container").hide();
-             $("#price-container").hide(); 
+            console.log("call by function updateMaterialPricingUI2");
+             $(".dynamic-fields-container").show();
+             var materialPriceType = $("#edit_material_type").val().trim();; 
+            
+             $(".snow_dynmic_container").hide();
+             $("#materials-container").show();
+             $(".amount-container").hide();
+             $(".tiered-container").hide();
+             $(".price-container3").hide(); 
 
             switch (materialPriceType) {
                 case 'Ton':
@@ -510,7 +516,7 @@
                 break;
 
                 case 'Ton_And_Bag':
-                   var perBagValue =  $("#editPrice2").val();
+                       var perBagValue =  $("#editPrice2").val();
                        var perTonValue =  $("#editPrice1").val();
                      console.log("Per Ton and Per Bag",perTonValue + " and " +perBagValue);
                         $(".per_ton").show();
@@ -526,11 +532,11 @@
         //Updateing Material pricing close
 
        // $("#pricingType").live('change', function () {
-                $('body').on('change', '#pricingType', function() {
+                $('body').on('change', '#pricingType,#material', function() {
 
             updatePricingUI();
         });
-        $("#amountQty, #addPrice, #editPrice, #addPrice1, #addPrice2,#editPrice1,#editPrice2").live('keyup', function () {
+        $("#amountQty, #addPrice, #editPrice, #addPrice1, #addPrice2").live('keyup', function () {
              updatePricingUI();
         });
 
@@ -541,17 +547,24 @@
 
 
 
-        $('body').on('change', '#material', function() {
-                updateMaterialPricingUI();
+        $('body').on('change', '#edit_material_type', function() {
+                      updateMaterialPricingUI();
         });
+ 
 
-        $('.btn-edit').on('click', function(event) {
-           event.preventDefault(); // Prevent the default anchor behavior
-           console.log("calling when edit");
-           updatePricingUI2();
+        // $('.btn-edit').on('click', function(event) {
+        //      edit_flag = 1;
+        //                  console.log("Edit flag set to: " + edit_flag); // Debugging log
+
+        //                   event.preventDefault(); // Prevent the default anchor behavior
+        //         //   updateMaterialPricingUI(); 
+        //   });
 
  
-      });
+
+
+
+ 
 
 
         $('#serviceCategory option').attr('selected', false);
@@ -1655,7 +1668,7 @@
             postData.edit_map_area_data = $("#edit_map_area_data").val();
             postData.amountQty = $("#amountQty").val();
             postData.pricingType = $("#pricingType").val();
-            postData.material = $("#material").val();
+            postData.material = $("#edit_material_type").val();
             postData.texts = [];
             postData.text_ids = [];
             postData.images = [];
@@ -1827,19 +1840,43 @@
                     text: 'Cancel',
                     click: function () {
                         $(this).dialog('close');
+                            edit_flag = 0;
+
                     }
                 }
             },
             create: function () {
                 $(".myDialog").append(edit_msg);
+            },
+            close: function() {
+                edit_flag = 0; // Reset edit_flag to 0 when the dialog is closed
+                console.log("Dialog closed. Edit flag reset to: " + edit_flag); // Debugging log
             }
         });
+
+
         $(document).on("click", "#proposal_services .btn-edit", function () {
-            $("#snow_dynmic_container").hide();
+            edit_flag=1;
+            $(".snow_dynmic_container").hide();
             var serviceId = $(this).data('id');
             var companyId = '<?php echo $proposal->getOwner()->getCompanyId(); ?>';
             var proposalId = '<?php echo $proposal->getProposalId(); ?>';
              $(this).trigger('mouseout');
+             var material = $("#edit_material_type").val();
+ 
+             console.log("pricingtypesss",material);
+   
+             if(material=="Ton" || material=="Bag" ||  material=="Ton_And_Bag"){
+                $('.amount-container').css('display', '');
+               $('.amount-container').first().hide(); // Hide the first one
+               $('.amount-container').eq(1).hide(); // Hide the second one
+
+               console.log("In edit section ");
+            }else{
+                                 console.log("In edit section33 ");
+                                 console.log($('.amount-container')); // Check if the element is being selected
+
+            }
 
 
             $('.btn-edit').tipTip('destroy');
@@ -11234,8 +11271,8 @@ $(document).ready(function() {
 
         if (tierCount > maxTiers) {
             // alert("You can only add up to 10 tiers.");
-            $("#snow_dynmic_container").show();
-            $("#snow_dynmic_container").text("You can only add up to 10 tiers.");
+            $(".snow_dynmic_container").show();
+            $(".snow_dynmic_container").text("You can only add up to 10 tiers.");
             return;
         }
 
@@ -11252,7 +11289,7 @@ $(document).ready(function() {
             </div>`;
         
         // Append the new fields to the dynamic-fields-container div
-        $('#dynamic-fields-container').append(newFields);
+        $('.dynamic-fields-container').append(newFields);
         
         // Increment the tier count for next addition
         tierCount++;
@@ -11269,8 +11306,8 @@ $(document).ready(function() {
             // Check if the count exceeds 10
             if (count > 10) {
                 // Show the message
-                $("#snow_dynmic_container").show();
-                $("#snow_dynmic_container").text("You can only add up to 10 tiers.");
+                $(".snow_dynmic_container").show();
+                $(".snow_dynmic_container").text("You can only add up to 10 tiers.");
 
             }
         }

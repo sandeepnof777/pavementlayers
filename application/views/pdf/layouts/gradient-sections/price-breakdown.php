@@ -342,7 +342,44 @@
                     <tbody>
                     <?php
                     $k = 0;
-                    foreach ($services as $service) {
+                    $total=0;
+                                           // echo "<pre>";print_r($services);
+                                            $newServicearray = array();
+                                            $counter = 0; // Counter to manage array keys
+
+                                            foreach ($services as $key => $newservice) {
+                                                if ($newservice->getMaterial() == "Ton_And_Bag") {
+                                                    // Create separate array entry for 'Ton'
+                                                    $newServicearray[$counter]['getServiceName'] = $newservice->getServiceName();
+                                                    $newServicearray[$counter]['getPrice'] = $newservice->getPriceTon();
+                                                    $newServicearray[$counter]['getPricingType'] = $newservice->getPricingType();
+                                                    $newServicearray[$counter]['getMaterial'] = 'Ton';
+                                                    $newServicearray[$counter]['getTon'] = $newservice->getPriceTon();
+                                                    $counter++;
+                                                    // Create separate array entry for 'Bag'
+                                                    $newServicearray[$counter]['getServiceName'] = $newservice->getServiceName();
+                                                    $newServicearray[$counter]['getPrice'] =  $newservice->getPriceBag();
+                                                    $newServicearray[$counter]['getPricingType'] = $newservice->getPricingType();
+                                                    $newServicearray[$counter]['getMaterial'] = 'Bag';
+                                                    $newServicearray[$counter]['getBag'] = $newservice->getPriceBag();
+                                                    $counter++;
+                                                } else {
+                                                    // Add as normal when 'Ton_And_Bag' is not present
+                                                    $newServicearray[$counter]['getServiceName'] = $newservice->getServiceName();
+                                                    $newServicearray[$counter]['getPrice'] = $newservice->getPrice();
+                                                    $newServicearray[$counter]['getPricingType'] = $newservice->getPricingType();
+                                                    $newServicearray[$counter]['getMaterial'] = $newservice->getMaterial();
+                                                    // Check if Ton and Bag prices are available and add them
+                                                    if ($newservice->getMaterial() == "Ton") {
+                                                        $newServicearray[$counter]['getTon'] = $newservice->getPriceTon();
+                                                    }
+                                                    if ($newservice->getMaterial() == "Bag") {
+                                                        $newServicearray[$counter]['getBag'] = $newservice->getPriceBag();
+                                                    }
+                                                    $counter++;
+                                                }
+                                            }
+                   /* foreach ($services as $service) {
                         if (in_array($service->getPricingType(), $timeMaterialServices)) {
                             $k++;
                             $class = ($k % 2) ? 'odd' : '';
@@ -359,7 +396,39 @@
                         <?php
                         }
                     }
+                    */
+                    foreach ($newServicearray as $service) {
+                        if (in_array($service['getPricingType'], $timeMaterialServices)) {
+                            $k++;
+                            $class = ($k % 2) ? 'odd' : '';
+                            ?> 
+                            <tr>
+                                <td class="<?php echo $class; ?>"><?php echo $k; ?></td>
+                                <td class="<?php echo $class; ?>"><?php echo $service['getServiceName']; ?></td>
+                                <td align="right" class="<?php echo $class; ?>">$<?php
+                                    $price = (float)str_replace($s, $r, $service['getPrice']);
+                                    echo @number_format($price, 2);
+                                    ?></td>
+                                <td align="right" class="<?php echo $class; ?>">
+                                    Per <?php echo ($service['getPricingType'] != 'Materials') ? $service['getPricingType'] : $service['getMaterial']; ?></td>
+                            </tr>
+                            <?php 
+                             $price = (float)str_replace($s, $r, $service['getPrice']);
+                             $total = $price+$total;                                                    
+                        }
+                    }
+
+
                     ?>
+                     <?php if (!isset($hideTotalPrice) || !$hideTotalPrice) { ?>
+                                <tfoot>
+                                <tr>
+                                    <td></td>
+                                    <td align="right"><b>Total</b></td>
+                                    <td align="right"><b>$<?php echo number_format($total, 2) ?></b></td>
+                                </tr>
+                                </tfoot>
+                <?php } ?>
                     </tbody>
                 </table>
             <?php } ?>

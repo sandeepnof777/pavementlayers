@@ -5234,29 +5234,26 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
             $price = $this->input->post('price');
             $tonPrice = str_replace('$', '', $tonPrice);
             $bagPrice = str_replace('$', '', $bagPrice);
-            $proposal_service->setPriceBag($bagPrice);
-            $proposal_service->setPriceTon($tonPrice);
-          //  echo "<pre>";print_r($_POST);die;
             if ($material=="Ton_And_Bag" && $pricingType=="Materials") {
                 // Remove dollar signs if they are present
                 // Calculate total price
                 $totalPrice = $tonPrice + $bagPrice;        
                 // Set the price in the proposal service with a dollar sign
                 $proposal_service->setPrice('$' . number_format($totalPrice, 2)); // Format to 2 decimal places
+                $proposal_service->setPriceBag('$' . number_format($bagPrice, 2));
+                $proposal_service->setPriceTon('$' . number_format($tonPrice, 2));
+
             }elseif ($material=="Bag" && $pricingType=="Materials")  {
                 // Assign tonPrice or bagPrice (whichever is not empty) to price
-                $proposal_service->setPriceBag($price);
                 $proposal_service->setPriceBag('$' . number_format($bagPrice, 2));
                 $proposal_service->setPriceTon('$' . number_format(0, 2));
+                $proposal_service->setPrice($bagPrice); 
                 // Set the price with a dollar sign
             } elseif ($material=="Ton" && $pricingType=="Materials")  {
                 // Assign tonPrice or bagPrice (whichever is not empty) to price
-                $proposal_service->setPriceTon($price);
                 $proposal_service->setPriceTon('$' . number_format($tonPrice, 2));
                 $proposal_service->setPriceBag('$' . number_format(0, 2));
-
-
-                // Set the price with a dollar sign
+                $proposal_service->setPrice($tonPrice); 
             }
             //adding price for price ton & price bag
         // Capture serviceDescriptions and occurrence, and save as JSON
@@ -5860,7 +5857,7 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                 if($madeleine_flag==1){
                     $fields[] = '<p class="clearfix"><label>Pricing Unit</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
                     $snow_selected = $service->getSnowPriceType();
-                    $fields[] = '<p class="clearfix" id="madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
+                    $fields[] = '<p class="clearfix madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
                         $this->madeleine, $snow_selected, ' id="madeleine"') . '</p>';
                     // Fetch service descriptions and occurrences
                         $serviceValue = $service->getSnowServiceDescriptionsPrice(); // Assuming it returns a JSON object
@@ -5888,23 +5885,26 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                         }
                             //  Add a container for dynamically generated fields 
                             $selected_material_val = $service->getMaterial();
+                            $perTon = ($selected_material_val=="Ton") ? "selected" : "";
+                            $perBag = ($selected_material_val=="Bag") ? "selected" : "";
+                            $perTonBag = ($selected_material_val=="Ton_And_Bag") ? "selected" : "";
 
-                        $fields[] = '<div id="dynamic-fields-container"></div>';
+                        $fields[] = '<input type="hidden" name="getSeletedValue"  id="getSeletedValue" value="'. $selected_material_val .'">';
+                        $fields[] = '<div class="dynamic-fields-container"></div>';
                         $fields[] ='<p class="clearfix tiered-container"><button type="button" id="pricing_tier" class="pricing_tier update-button addIcon ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Pricing Tier</span></button></p>';
-                        $fields[] ='<p class="error clearfix tiered-container"><div class="error" id="snow_dynmic_container"></div></p>';
-                        $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
-                        $this->materials, $selected_material_val, ' id="material"') . '</p>'; 
+                        $fields[] ='<p class="error clearfix tiered-container"><div class="error snow_dynmic_container"></div></p>';
+                        $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label><select name="material" id="edit_material_type"><option value="Ton" '.$perTon.'>Per Ton</option><option  value="Bag" '.$perBag.'>Per Bag</option><option value="Ton_And_Bag" '.$perTonBag.'>Per Ton and Per Bag</option></select></p>'; 
                         // Add additional fields for both Per Ton and Per Bag prices
                         $fields[] = '<p class="clearfix price-container2  per_ton"><label id="price-label1">Per Ton Price</label><input type="text" name="perton" class="field-priceFormat" id="editPrice1" value="'. $service->getPriceTon() .'"></p>';
                         $fields[] = '<p class="clearfix price-container2  per_bag"><label id="price-label2">Per Bag Price </label><input type="text" name="perbag" class="field-priceFormat" id="editPrice2" value="'. $service->getPriceBag() .'"></p>';
-                        $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Total Price </label><input type="text" name="price" class="field-priceFormat" id="editPrice" value="'. $service->getPrice() .'"></p>';
+                        $fields[] = '<p class="clearfix price-container3"><label id="price-label">Total Price </label><input type="text" name="price" class="field-priceFormat" id="editPrice" value="'. $service->getPrice() .'"></p>';
                     
 
     
                 }else{  
                     $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
                     $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
-                            $this->materials, $service->getMaterial(), ' id="material"') . '</p>';
+                            $this->materials, $service->getMaterial(), 'id="material"') . '</p>';
                     $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type = "text" name = "price" class="field-priceFormat" id = "editPrice" value = "' . $service->getPrice() . '"></p> ';
                 }
                
@@ -6683,7 +6683,7 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
 
             if($madeleine_flag==1){
                 $fields[] = '<p class="clearfix"><label>Pricing Unit</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
-                $fields[] = '<p class="clearfix" id="madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
+                $fields[] = '<p class="clearfix madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
                     $this->madeleine, array(), ' id="madeleine"') . '</p>';
                 $fields[] = '<p class="clearfix tiered-container"><label id="description-label">Service Descriptions(1)</label>
                  <textarea id="serviceDescriptions" name="serviceDescriptions[]" rows="4" cols="50"></textarea>
@@ -6693,15 +6693,15 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                 <input type="text" class="occurrence" name="occurrences[]"   value="$0" id="occurrence" />                 
                 </p>';
                 //  Add a container for dynamically generated fields 
-                $fields[] = '<div id="dynamic-fields-container"></div>';
+                $fields[] = '<div class="dynamic-fields-container"></div>';
                 $fields[] ='<p class="clearfix tiered-container"><button type="button" id="pricing_tier" class="pricing_tier update-button addIcon ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Pricing Tier</span></button></p>';
-                $fields[] ='<p class="error clearfix tiered-container"><div class="error" id="snow_dynmic_container"></div></p>';
+                $fields[] ='<p class="error clearfix tiered-container"><div class="error snow_dynmic_container"></div></p>';
                  $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
                 $this->materials, array(), ' id="material"') . '</p>'; 
                 // Add additional fields for both Per Ton and Per Bag prices
                 $fields[] = '<p class="clearfix price-container2 per_ton"  ><label id="price-label1">Per Ton Price</label><input type="text" name="perton" class="field-priceFormat" id="addPrice1" value="$0"></p>';
                 $fields[] = '<p class="clearfix price-container2 per_bag"><label id="price-label2">Per Bag Price </label><input type="text" name="perbag" class="field-priceFormat" id="addPrice2" value="$0"></p>';
-                $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Per Ton Price </label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p>';
+                $fields[] = '<p class="clearfix price-container3"><label id="price-label">Per Ton Price </label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p>';
               
 
             }else{  

@@ -1273,9 +1273,55 @@ foreach ($services as $k => $serviceItem) {
         $taxTotal = 0;
         $taxSubTotal = 0;
         $isTaxApplied = false;
-        foreach ($services as $service) {
- 
 
+                                            // echo "<pre>";print_r($services);
+                                            $newServicearray = array();
+                                            $counter = 0; // Counter to manage array keys
+                                            foreach ($services as $key => $newservice) {
+                                                if ($newservice->getMaterial() == "Ton_And_Bag") {
+                                                    // Create separate array entry for 'Ton'
+                                                    $newServicearray[$counter]['getServiceName'] = $newservice->getServiceName();
+                                                    $newServicearray[$counter]['getPrice'] = $newservice->getPriceTon();
+                                                    $newServicearray[$counter]['getPricingType'] = $newservice->getPricingType();
+                                                    $newServicearray[$counter]['getMaterial'] = 'Ton';
+                                                    $newServicearray[$counter]['getTon'] = $newservice->getPriceTon();
+                                                    $newServicearray[$counter]['getTaxPrice'] = $newservice->getTaxPrice();
+                                                    $newServicearray[$counter]['getMapAreaData'] = $newservice->getMapAreaData();
+
+
+                                                    $counter++;
+                                                    // Create separate array entry for 'Bag'
+                                                    $newServicearray[$counter]['getServiceName'] = $newservice->getServiceName();
+                                                    $newServicearray[$counter]['getPrice'] =  $newservice->getPriceBag();
+                                                    $newServicearray[$counter]['getPricingType'] = $newservice->getPricingType();
+                                                    $newServicearray[$counter]['getMaterial'] = 'Bag';
+                                                    $newServicearray[$counter]['getBag'] = $newservice->getPriceBag(); 
+                                                    $newServicearray[$counter]['getTaxPrice'] = $newservice->getTaxPrice();
+                                                    $newServicearray[$counter]['getMapAreaData'] = $newservice->getMapAreaData();
+
+                                                   
+                                                    $counter++;
+                                                } else {
+                                                    // Add as normal when 'Ton_And_Bag' is not present
+                                                    $newServicearray[$counter]['getServiceName'] = $newservice->getServiceName();
+                                                    $newServicearray[$counter]['getPrice'] = $newservice->getPrice();
+                                                    $newServicearray[$counter]['getPricingType'] = $newservice->getPricingType();
+                                                    $newServicearray[$counter]['getMaterial'] = $newservice->getMaterial();
+                                                    $newServicearray[$counter]['getMapAreaData'] = $newservice->getMapAreaData();
+                                                    $newServicearray[$counter]['getTaxPrice'] = $newservice->getTaxPrice();
+
+                                                    // Check if Ton and Bag prices are available and add them
+                                                    if ($newservice->getMaterial() == "Ton") {
+                                                        $newServicearray[$counter]['getTon'] = $newservice->getPriceTon();
+                                                    }
+                                                    if ($newservice->getMaterial() == "Bag") {
+                                                        $newServicearray[$counter]['getBag'] = $newservice->getPriceBag();
+                                                    }
+                                                    $counter++;
+                                                }
+                                            }
+
+       /*  foreach ($services as $service) {
             $k++;
             $taxprice = (float) str_replace($s, $r, $service->getTaxPrice());
             ?>
@@ -1312,7 +1358,46 @@ foreach ($services as $k => $serviceItem) {
             $total += $price;
             $taxSubTotal += $taxprice;
             
-        }
+        } */
+
+        foreach ($newServicearray as $service) {
+            $k++;
+            $taxprice = (float) str_replace($s, $r, $service['getTaxPrice']);
+            ?>
+            <tr>
+                <td <?php if ($k % 2) {
+                    echo 'class="odd"';
+                } ?>><?php echo $k; ?></td>
+                <td <?php if ($k % 2) {
+                    echo 'class="odd"';
+                } ?>><?php
+                    if ($taxprice > 0) {
+                        echo '<span style="font-weight:bold;vertical-align: sub;">* </span>';
+                        $isTaxApplied = true;
+                    }
+                    //fix for the price breakdown to show service name instead of Additional Service
+                    echo $service['getServiceName'];
+                    ?></td>
+                <?php if($isMapDataAdded){?><td <?php if ($k % 2) {echo 'class="odd"';} ?>> <?php echo $service['getMapAreaData'];?></td><?php } ?>
+                <td <?php echo ($k % 2) ? ' class="odd"' : ''; ?> style="text-align: right">
+                    <?php
+                    // Price required for calculations
+                    $price = (float) str_replace($s, $r, $service['getPrice']);
+
+                    if ($lumpSum) {
+                        echo 'Included';
+                    } else {
+                        //echo $service->getFormattedPrice();
+                        echo '$' . number_format(($price - $taxprice), 2);
+                    }
+                    ?>
+                </td>
+            </tr>
+            <?php
+            $total += $price;
+            $taxSubTotal += $taxprice;
+            
+        } 
 
         ?>
         </tbody>
