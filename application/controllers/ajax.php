@@ -5226,6 +5226,8 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
         } else {
             $proposal_service->setServiceName($initial_service->getServiceName());
         } 
+
+       // echo "<pre>";print_r($_POST);die;
             //adding price for price ton & price bag
             $tonPrice = $this->input->post('tonPrice');
             $bagPrice = $this->input->post('bagPrice');
@@ -5257,36 +5259,7 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
             }
             //adding price for price ton & price bag
         // Capture serviceDescriptions and occurrence, and save as JSON
-        $snowPricingType = $this->input->post('snowPricingType');
-        $serviceDescriptions = $this->input->post('serviceDescriptions');
-        $occurrences = $this->input->post('occurrences');
-                // Initialize arrays to hold valid data
-        $validServiceDescriptions = [];
-        $validOccurrences = [];
-        $totalOccurences=0;
-        // Loop through both arrays and check for empty values
-        for ($i = 0; $i < count($serviceDescriptions); $i++) {
-            $description = trim($serviceDescriptions[$i]);
-            $occurrence = trim($occurrences[$i]);
-            // Only include non-empty values
-            if (!empty($description) && !empty($occurrence)) {
-                $validServiceDescriptions[] = $description;
-                $validOccurrences[] = $occurrence;
-                $totalOccurences = $totalOccurences + str_replace('$', '', $occurrence);
-            }
-        }
-        if($totalOccurences>0){
-            //add a total occurence and set into price
-              $proposal_service->setPrice($totalOccurences); 
-          }
-            // Prepare data in JSON format with filtered data
-            $jsonData = json_encode([
-                'serviceDescriptions' => $validServiceDescriptions,
-                'occurrences' => $validOccurrences
-            ]);                    
-        
-            $proposal_service->setSnowServiceDescriptionsPrice($jsonData);
-            $proposal_service->setSnowPriceType($snowPricingType);
+       
         // Save JSON data to snow_service_descriptions_price field
 
         // Is it tax?
@@ -5751,6 +5724,230 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
     public function getProposalServiceDetails($id)
     {
         $return = array();
+        $return['error'] = 0;
+        $service = $this->em->find('models\Proposal_services', $id);
+        if (!$service) {
+            $return['error'] = 1;
+        } else {
+            $this->load->database();
+            $return['serviceName'] = $service->getServiceName();
+            $return['serviceId'] = $service->getServiceId();
+            $texts = array();
+            $text_ids = array();
+            $txts = $this->em->createQuery('SELECT t FROM models\Proposal_services_texts t WHERE t.serviceId=' . $id . ' ORDER BY t.ord')->getResult();
+
+            foreach ($txts as $text) {
+                $texts[] = html_entity_decode($text->getText());
+                $text_ids[] = $text->getTextId();
+            }
+            $return['texts'] = $texts;
+            $return['text_ids'] = $text_ids;
+            $fields = array();
+            //$fds = $this->em->createQuery('select f from models\ServiceField f where f.service=' . $service->getInitialService() . ' order by f.ord')->getResult();
+            $fds = $this->account()->getCompany()->getServiceFields($service->getInitialService());
+           // echo "<pre>";print_r($fds);
+            foreach ($fds as $field) {
+                //create field Code
+                $fieldCodes = '<p class="clearfix"><label>' . $field->getFieldName() . '</label>';
+                //check if we got field values, who knows we may have not any ?!
+                $fieldValue = $field->getFieldValue();
+                $savedValue = $this->em->getRepository('models\Proposal_services_fields')->findOneBy(array(
+                    'serviceId' => $service->getServiceId(),
+                    'fieldCode' => $field->getFieldCode(),
+                ));
+                if ($savedValue) {
+                    $fieldValue = $savedValue->getFieldValue();
+                }
+                switch ($field->getFieldType()) {
+                    case 'number':
+                        $fieldCodes .= '<input class="field field-numberFormat" type="number" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $fieldValue . '">';
+                        break;
+                    case 'text':
+                        $fieldCodes .= '<input class="field" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $fieldValue . '">';
+                        break;
+                    case 'select':
+                        $fieldCodes .= '<select name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" class="field">';
+                        $options = explode("\n", $field->getFieldValue());
+                        if (!in_array($fieldValue, $options) && ($savedValue)) {
+                            $options[] = $fieldValue;
+                        }
+                        foreach ($options as $option) {
+                            if ($option) {
+                                if ($fieldValue == $option) {
+                                    $fieldCodes .= '<option selected="selected">';
+                                } else {
+                                    $fieldCodes .= '<option>';
+                                }
+                                $fieldCodes .= $option . '</option>';
+                            }
+                        }
+                        $fieldCodes .= '</select>';
+                        break;
+                    case 'textarea':
+                        $fieldCodes .= '<textarea id="' . $field->getFieldCode() . '" class="field" name="' . $field->getFieldCode() . '">' . $fieldValue . '</textarea>';
+                        break;
+                }
+                $fieldCodes .= '</p>';
+                $fields[] = $fieldCodes;
+            }
+            //calculator buttons
+            switch ($service->getInitialService()) {
+                case 'z27':
+                    $fields[] = '<p class="clearfix" style="text-align: center;">
+                    If you want to calculate a new price or edit any existing data, click the following button: <br>
+                    <a class="btn update-button editSealcoatingService">Calculate New Price</a>
+                    </p>';
+                    break;
+            }
+
+            $fields[] = '<p class="clearfix"><label>Map Area</label><input class="field " name="edit_map_area_data" id="edit_map_area_data" value="' . $service->getMapAreaData() . '" ></p>';
+
+            $fields[] = '<h4 style="text-align: center;">Pricing</h4>';
+
+            $initialService = $this->em->find('models\Services', $service->getInitialService());
+
+ 
+            if (($service->getInitialService() == SNOW_CATEGORY) || $initialService->getParent() == SNOW_CATEGORY) {
+                $pricingTypeCode = '';
+                $optionChecked = $service->isOptional() ? 'checked="checked"' : '';
+
+                foreach ($this->servicePricingTypes as $label => $type) {
+                    $selected = '';
+                    if ($service->getPricingType() == $type) {
+                        $selected = ' selected="selected"';
+                    }
+                    $pricingTypeCode .= '<option' . $selected . ' value="' . $type . '">' . $label . '</option>';
+                }
+                $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox"' . $optionChecked . ' name="editOptional" id="editOptional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
+                $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p> ';
+               
+                // $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
+                //         $this->materials, $service->getMaterial(), ' id="material"') . '</p>';
+
+
+                $selected_material_val = $service->getMaterial();
+                $perTon = ($selected_material_val=="Ton") ? "selected" : "";
+                $perBag = ($selected_material_val=="Bag") ? "selected" : "";
+                $perTonBag = ($selected_material_val=="Ton_And_Bag") ? "selected" : "";
+                $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label><select name="material" id="edit_material_type"><option value="Ton" '.$perTon.'>Per Ton</option><option  value="Bag" '.$perBag.'>Per Bag</option><option value="Ton_And_Bag" '.$perTonBag.'>Per Ton and Per Bag</option></select></p>'; 
+                $fields[] = '<input type="hidden" name="getSeletedValue"  id="getSeletedValue" value="'. $selected_material_val .'">';
+                // $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type = "text" name = "price" class="field-priceFormat" id = "editPrice" value = "' . $service->getPrice() . '"></p> ';
+                $fields[] = '<p class="clearfix amount-container"><label id="amount-label">Frequency</label><input type = "text" name = "amountQty" class="field-numberFormat" id = "amountQty" value = "' . $service->getAmountQty() . '"></p>';
+                $fields[] = '<p class="clearfix amount-container">
+                <label id="total">Total Amount</label>
+                <input type="text" class="priceFormat" disabled value="$0" id="totalCalculated" />
+                </p> ';
+
+                $fields[] = '<p class="clearfix price-container2  per_ton"><label id="price-label1">Per Ton Price</label><input type="text" name="perton" class="field-priceFormat" id="editPrice1" value="'. $service->getPriceTon() .'"></p>';
+                $fields[] = '<p class="clearfix price-container2  per_bag"><label id="price-label2">Per Bag Price </label><input type="text" name="perbag" class="field-priceFormat" id="editPrice2" value="'. $service->getPriceBag() .'"></p>';
+                // $fields[] = '<p class="clearfix price-container3"><label id="price-label">Total Price </label><input type="text" name="price" class="field-priceFormat" id="editPrice" value="'. $service->getPrice() .'"></p>';
+                $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type = "text" name = "price" class="field-priceFormat" id = "editPrice" value = "' . $service->getPrice() . '"></p> ';
+
+
+            } else {
+                if ($initialService->getTax()) {
+                    $excludeChecked = $service->getExcludeFromTotal() ? 'checked="checked"' : '';
+                    $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type = "text" name = "price" class="field-priceFormat" id = "editPrice" value = "' . $service->getPrice() . '"></p> ';
+                    //$fields[] = '<p class="clearfix"><label style="width: 135px;">Exclude from Totals</label><input type="checkbox"' . $excludeChecked . ' name="edit_exclude_total" id="edit_exclude_total" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
+                } else {
+                    $noPriceChecked = $service->isNoPrice() ? 'checked="checked"' : '';
+                    $optionChecked = $service->isOptional() ? 'checked="checked"' : '';
+                    $estimatorChecked = $service->getIsEstimate() ? 'checked="checked"' : '';
+                    $isHideInProposal = $service->getIsHideInProposal() ? 'checked="checked"' : '';
+                    $priceShow = $service->getIsEstimate() ? 'none' : 'block';
+                    //$estimatorChecked = 'checked="checked"';
+
+                    $fields[] = '<p class="clearfix"><label>No Price</label><input type="checkbox"' . $noPriceChecked . ' name="edit_no_price" id="edit_no_price" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
+                    $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox"' . $optionChecked . ' name="editOptional" id="editOptional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
+                    if ($this->account()->hasEstimatingPermission()) {
+
+                        $fields[] = '<p class="clearfix"><label>Use Estimator</label><input type="checkbox" ' . $estimatorChecked . ' name="enable_service_estimate" id="enable_service_estimate" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
+                    }
+                    else{
+                       // $priceShow = 'block';
+                       if($service->getIsEstimate()){
+                        $fields[] = '<p class="clearfix"><label>Use Estimator</label><input type="checkbox" checked="checked" disabled="disabled" name="enable_service_estimate" id="enable_service_estimate" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
+                       }
+                    }
+
+                    $fields[] = '<p class="clearfix" ><label>Hidden <i class="fa fa-fw fa-info-circle tiptipright" style="cursor:pointer;" title="If checked, this service will not appear in the proposal and will not be included in the price"></i></label><input type="checkbox" ' . $isHideInProposal . ' name="hide_from_proposal" id="hide_from_proposal" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
+                    $fields[] = '<p class="clearfix" id="price-container"  style="display:' . $priceShow . '"><label id="price-label">Price</label><input type = "text" name = "price" class="field-priceFormat" id = "editPrice" value = "' . $service->getPrice() . '"></p> ';
+                    //$fields[] = '<a href="JavaScript:void(0);" class="btn update-button saveIcon" style="position: absolute;margin-top: 31px;right:0px;" id="editServiceCopyButton">Save</a>';
+                }
+            }
+            $return['estimateItemCount'] = (int)$this->getEstimationRepository()->getProposalServiceLineItemsCount($id);
+            $return['fields'] = $fields;
+
+            $serviceImageIds = array();
+            $serviceImageTitles = array();
+            $serviceImagePaths = array();
+            $serviceImageActives = array();
+            $serviceImageWos = array();
+            $serviceImageNotes = array();
+
+            $serviceImageQuery = 'SELECT pm FROM models\Proposals_images pm 
+                                WHERE pm.proposal_service_id=' . $id . ' AND pm.map = 0
+                                ORDER BY pm.ord';
+
+            $serviceImages = $this->em->createQuery($serviceImageQuery)->getResult();
+
+            foreach ($serviceImages as $serviceImage) {
+                $serviceImageIds[] = $serviceImage->getImageId();
+                $serviceImageTitles[] = $serviceImage->getTitle();
+                $serviceImageNotes[] = $serviceImage->getNotes();
+                $serviceImagePaths[] = $serviceImage->getImage();
+                $serviceImageActives[] = $serviceImage->getActive();
+                $serviceImageWos[] = $serviceImage->getActivewo();
+
+            }
+
+            $return['serviceImageIds'] = $serviceImageIds;
+            $return['serviceImageTitles'] = $serviceImageTitles;
+            $return['serviceImagePaths'] = $serviceImagePaths;
+            $return['serviceImageActives'] = $serviceImageActives;
+            $return['serviceImageWos'] = $serviceImageWos;
+            $return['serviceImageNotes'] = $serviceImageNotes;
+
+
+            //Service Map Image
+            $serviceMapImageIds = array();
+            $serviceMapImageTitles = array();
+            $serviceMapImagePaths = array();
+            $serviceMapImageActives = array();
+            $serviceMapImageWos = array();
+            $serviceMapImageNotes = array();
+
+            $serviceMapImageQuery = 'SELECT pm FROM models\Proposals_images pm 
+                                WHERE pm.proposal_service_id=' . $id . ' AND pm.map = 1
+                                ORDER BY pm.ord';
+
+            $serviceMapImages = $this->em->createQuery($serviceMapImageQuery)->getResult();
+
+            foreach ($serviceMapImages as $serviceMapImage) {
+                $serviceMapImageIds[] = $serviceMapImage->getImageId();
+                $serviceMapImageTitles[] = $serviceMapImage->getTitle();
+                $serviceMapImageNotes[] = $serviceMapImage->getNotes();
+                $serviceMapImagePaths[] = $serviceMapImage->getImage();
+                $serviceMapImageActives[] = $serviceMapImage->getActive();
+                $serviceMapImageWos[] = $serviceMapImage->getActivewo();
+
+            }
+
+            $return['serviceMapImageIds'] = $serviceMapImageIds;
+            $return['serviceMapImageTitles'] = $serviceMapImageTitles;
+            $return['serviceMapImagePaths'] = $serviceMapImagePaths;
+            $return['serviceMapImageActives'] = $serviceMapImageActives;
+            $return['serviceMapImageWos'] = $serviceMapImageWos;
+            $return['serviceMapImageNotes'] = $serviceMapImageNotes;
+            
+        }
+
+        echo json_encode($return);
+    }
+
+    public function getProposalServiceDetails14($id)
+    {
+        $return = array();
         $madeleine_flag=0;
         $return['error'] = 0;
         $service = $this->em->find('models\Proposal_services', $id);
@@ -5855,10 +6052,10 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                 $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox"' . $optionChecked . ' name="editOptional" id="editOptional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
                 // $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p> ';
                 if($madeleine_flag==1){
-                    $fields[] = '<p class="clearfix"><label>Pricing Unit</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
+                    $fields[] = '<p class="clearfix pricing_unit_container"><label>Pricing Unit</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
                     $snow_selected = $service->getSnowPriceType();
-                    $fields[] = '<p class="clearfix madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
-                        $this->madeleine, $snow_selected, ' id="madeleine"') . '</p>';
+                    // $fields[] = '<p class="clearfix madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
+                    //     $this->madeleine, $snow_selected, ' id="madeleine"') . '</p>';
                     // Fetch service descriptions and occurrences
                         $serviceValue = $service->getSnowServiceDescriptionsPrice(); // Assuming it returns a JSON object
                         $serviceData = json_decode($serviceValue, true); // Decode the JSON into an associative array
@@ -5894,7 +6091,7 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                         $fields[] ='<p class="clearfix tiered-container"><button type="button" id="pricing_tier" class="pricing_tier update-button addIcon ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Pricing Tier</span></button></p>';
                         $fields[] ='<p class="error clearfix tiered-container"><div class="error snow_dynmic_container"></div></p>';
                         $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label><select name="material" id="edit_material_type"><option value="Ton" '.$perTon.'>Per Ton</option><option  value="Bag" '.$perBag.'>Per Bag</option><option value="Ton_And_Bag" '.$perTonBag.'>Per Ton and Per Bag</option></select></p>'; 
-                        // Add additional fields for both Per Ton and Per Bag prices
+                        // Add additional fields for both Per Ton and Per Bag prices edit
                         $fields[] = '<p class="clearfix price-container2  per_ton"><label id="price-label1">Per Ton Price</label><input type="text" name="perton" class="field-priceFormat" id="editPrice1" value="'. $service->getPriceTon() .'"></p>';
                         $fields[] = '<p class="clearfix price-container2  per_bag"><label id="price-label2">Per Bag Price </label><input type="text" name="perbag" class="field-priceFormat" id="editPrice2" value="'. $service->getPriceBag() .'"></p>';
                         $fields[] = '<p class="clearfix price-container3"><label id="price-label">Total Price </label><input type="text" name="price" class="field-priceFormat" id="editPrice" value="'. $service->getPrice() .'"></p>';
@@ -5906,13 +6103,13 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                     $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
                             $this->materials, $service->getMaterial(), 'id="material"') . '</p>';
                     $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type = "text" name = "price" class="field-priceFormat" id = "editPrice" value = "' . $service->getPrice() . '"></p> ';
+                    $fields[] = '<p class="clearfix amount-container"><label id="amount-label">Frequency</label><input type = "text" name = "amountQty" class="field-numberFormat" id = "amountQty" value = "' . $service->getAmountQty() . '"></p>';
+                    $fields[] = '<p class="clearfix amount-container">
+                    <label id="total">Total Amount</label>
+                    <input type="text" class="priceFormat" disabled value="$0" id="totalCalculated" />
+                    </p> ';
                 }
                
-                $fields[] = '<p class="clearfix amount-container"><label id="amount-label">Frequency</label><input type = "text" name = "amountQty" class="field-numberFormat" id = "amountQty" value = "' . $service->getAmountQty() . '"></p>';
-                $fields[] = '<p class="clearfix amount-container">
-                <label id="total">Total Amount</label>
-                <input type="text" class="priceFormat" disabled value="$0" id="totalCalculated" />
-                </p> ';
 
             } else {
                 if ($initialService->getTax()) {
@@ -6073,9 +6270,9 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
             $bagPrice = trim($bagPrice);
             // Convert the cleaned prices to float for arithmetic operations
            // Remove commas from the prices
-           $tonPriceClean = str_replace(',', '', $tonPrice);
-           $bagPriceClean = str_replace(',', '', $bagPrice);
-           $totalPrice=0;
+            $tonPriceClean = str_replace(',', '', $tonPrice);
+            $bagPriceClean = str_replace(',', '', $bagPrice);
+            $totalPrice=0;
 
             if ($material=="Ton_And_Bag" && $pricingType=="Materials") {
                 // Remove dollar signs if they are present
@@ -6567,7 +6764,7 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
         $this->em->clear();
     }
 
-    public function getSnowServiceDetails($id)
+    public function getSnowServiceDetails14($id)
     {
         $return = array();
         $return['error'] = 0;
@@ -6681,10 +6878,13 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
              }
             $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox" name="optional" id="optional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
 
+ 
             if($madeleine_flag==1){
-                $fields[] = '<p class="clearfix"><label>Pricing Unit</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
-                $fields[] = '<p class="clearfix madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
-                    $this->madeleine, array(), ' id="madeleine"') . '</p>';
+ 
+                $fields[] = '<div class="material-specific-fields"><p class="clearfix"><label>Pricing Unit</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
+                // $fields[] = '<p class="clearfix madeleine-container"><label>Pricing Type</label>' . form_dropdown('madeleine',
+                //     $this->madeleine, array(), ' id="madeleine"') . '</p>';
+             
                 $fields[] = '<p class="clearfix tiered-container"><label id="description-label">Service Descriptions(1)</label>
                  <textarea id="serviceDescriptions" name="serviceDescriptions[]" rows="4" cols="50"></textarea>
                 </p>
@@ -6697,11 +6897,11 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                 $fields[] ='<p class="clearfix tiered-container"><button type="button" id="pricing_tier" class="pricing_tier update-button addIcon ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Pricing Tier</span></button></p>';
                 $fields[] ='<p class="error clearfix tiered-container"><div class="error snow_dynmic_container"></div></p>';
                  $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
-                $this->materials, array(), ' id="material"') . '</p>'; 
+                 $this->materials, array(), ' id="material"') . '</p>';  
                 // Add additional fields for both Per Ton and Per Bag prices
                 $fields[] = '<p class="clearfix price-container2 per_ton"  ><label id="price-label1">Per Ton Price</label><input type="text" name="perton" class="field-priceFormat" id="addPrice1" value="$0"></p>';
                 $fields[] = '<p class="clearfix price-container2 per_bag"><label id="price-label2">Per Bag Price </label><input type="text" name="perbag" class="field-priceFormat" id="addPrice2" value="$0"></p>';
-                $fields[] = '<p class="clearfix price-container3"><label id="price-label">Per Ton Price </label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p>';
+                $fields[] = '<p class="clearfix price-container3"><label id="price-label">Per Ton Price </label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p></div>';
               
 
             }else{  
@@ -6709,18 +6909,159 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                 $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
                 $this->materials, array(), ' id="material"') . '</p>';
                 $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p>';
-
-            }
+                $fields[] = '<p class="clearfix amount-container"><label id="amount-label">Frequency</label><input type="text" name="amountQty" class="field-numberFormat" id="amountQty" value="0">
+                </p>
+                <p class="clearfix amount-container">
+                <label id="total">Total Amount</label>
+                <input type="text" class="priceFormat" disabled value="$0" id="totalCalculated" />
+                </p>';
+            } 
           
+            $return['fields'] = $fields;
+        }
+        echo json_encode($return);
+    }
 
-      
- 
+    public function getSnowServiceDetails($id)
+    {
+        $return = array();
+        $return['error'] = 0;
+        $service = $this->em->find('models\Services', $id);
+        if (!$service) {
+            $return['error'] = 1;
+        } else {
+            $this->load->database();
+            $return['serviceName'] = $service->getServiceName();
+            $customTitle = $this->em->getRepository('models\Service_titles')->findOneBy(array(
+                'company' => $this->account()->getCompany()->getCompanyId(),
+                'service' => $service->getServiceId(),
+            ));
+            if ($customTitle) {
+                $return['serviceName'] = $customTitle->getTitle();
+            }
+            $texts = array();
+            $q = "SELECT st.*, sdt.linkId, sdt.replacedBy FROM service_texts st
+                    LEFT JOIN service_texts_order sto ON (st.textId = sto.textId)
+                    LEFT JOIN service_deleted_texts sdt ON ((st.textId = sdt.textId) AND (sdt.company = " . $this->account()->getCompany()->getCompanyId() . "))
+                    WHERE ((st.service = " . $service->getServiceId() . ") AND (st.company = " . $this->account()->getCompany()->getCompanyId() . " OR st.company = 0))
+                    ORDER BY COALESCE( sto.ord, 999999 ) , st.ord";
+            $q = "SELECT DISTINCT(st.textId), sdt.linkId, sdt.replacedBy FROM service_texts st
+                    LEFT JOIN service_texts_order sto ON (st.textId = sto.textId AND sto.company=" . $this->account()->getCompany()->getCompanyId() . ")
+                    LEFT JOIN service_deleted_texts sdt ON ((st.textId = sdt.textId) AND (sdt.company = " . $this->account()->getCompany()->getCompanyId() . "))
+                    WHERE ((st.service = " . $service->getServiceId() . ") AND (st.company = " . $this->account()->getCompany()->getCompanyId() . " OR st.company = 0))
+                    ORDER BY COALESCE( sto.ord, 999999 ) , st.ord";
+            $txts = $this->db->query($q);
+            foreach ($txts->result() as $txt) {
+                $text = $this->em->find('models\ServiceText', $txt->textId);
+                if ($text) {
+                    $texts[$txt->textId] = array(
+                        'text' => $text,
+                        'deleted' => $txt->linkId,
+                        'replacedBy' => $txt->replacedBy,
+                    );
+                }
+            }
+            //move deleted to last and replaced texts under the item that replaces them
+            foreach ($texts as $id => $text) {
+                if ($text['deleted'] && $text['replacedBy'] && isset($texts[$text['replacedBy']])) {
+                    unset($texts[$id]);
+                    $texts[$text['replacedBy']]['replacedText'] = $text;
+                } elseif ($text['deleted']) {
+                    unset($texts[$id]);
+                    //$texts[$id] = $text;
+                }
+            }
+            $texts2 = array();
+            foreach ($texts as $txt) {
+                $text = $txt['text'];
+                if (!$txt['deleted']) {
+                    $texts2[] = $text->getText();
+                }
+            }
+            $return['texts'] = $texts2;
+            $fields = array();
+            $fds = $this->em->createQuery('SELECT f FROM models\ServiceField f WHERE f.service=' . $service->getServiceId() . ' ORDER BY f.ord')->getResult();
+            $k = 0;
+            foreach ($fds as $field) {
+                $k++;
+                $class = '';
+                if ($k % 2) {
+                    $class = ' odd';
+                }
+                //create field Code
+                $fieldCode = '<p class="clearfix' . $class . '"><label>' . $field->getFieldName() . '</label>';
+                switch ($field->getFieldType()) {
+                    case 'number':
+                        $fieldCode .= '<input class="field field-numberFormat" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $field->getFieldValue() . '">';
+                        break;
+                    case 'text':
+                        $fieldCode .= '<input class="field" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $field->getFieldValue() . '">';
+                        break;
+                    case 'select':
+                        $fieldCode .= '<select name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" class="field">';
+                        $options = explode("\n", $field->getFieldValue());
+                        foreach ($options as $option) {
+                            if ($option) {
+                                $fieldCode .= '<option>' . $option . '</option>';
+                            }
+                        }
+                        $fieldCode .= '</select>';
+                        break;
+                    case 'textarea':
+                        $fieldCode .= '<textarea id="' . $field->getFieldCode() . '" class="field" name="' . $field->getFieldCode() . '">' . $field->getFieldValue() . '</textarea>';
+                        break;
+                }
+                $fieldCode .= '</p>';
+                $fields[] = $fieldCode;
+            }
+            //calculator buttons
+            switch ($id) {
+                case 27:
+                    $fields[] = '<p class="clearfix" style="text-align: center;">
+                    If you want to calculate the price, click the following button:
+                    <a class="btn update-button addSealcoatingService" href="#">Save and go to Calculator</a>
+                    </p>';
+                    break;
+            }
+            $fields[] = '<h4 style="text-align: center;">Pricing</h4>';
+            $pricingTypeCode = '';
+            foreach ($this->servicePricingTypes as $label => $type) {
+                $pricingTypeCode .= '<option value="' . $type . '">' . $label . '</option>';
+            }
+            
+            $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox" name="optional" id="optional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
+            $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
+            // $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
+            //         $this->materials, array(), ' id="material"') . '</p>';
+            // $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p>';
             $fields[] = '<p class="clearfix amount-container"><label id="amount-label">Frequency</label><input type="text" name="amountQty" class="field-numberFormat" id="amountQty" value="0">
                 </p>
              <p class="clearfix amount-container">
             <label id="total">Total Amount</label>
             <input type="text" class="priceFormat" disabled value="$0" id="totalCalculated" />
             </p>';
+
+            // Define the materials array
+            //     $material = [ 
+            //     'Ton' => 'Per Ton',
+            //     'Bag' => 'Per Bag',
+            //     'Ton_And_Bag' => 'Per Ton and Per Bag',
+            //     ];
+            //     // Generate the options for the dropdown
+            //     $materialOptions = '';
+            //     foreach ($material as $mlabel => $mtype) {
+            //        $materialOptions .= '<option value="' . $mtype . '">' . $mlabel . '</option>'; 
+            //     }                
+            // $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>'.'<select name="material" id="material">'.$materialOptions.'</select></p>';
+            $fields[] = '<p class="clearfix" id="add-materials-container"><label>Choose Material</label>' . form_dropdown('material',
+                    $this->materials, array(), ' id="addMaterial"') . '</p>';
+            // Add additional fields for both Per Ton and Per Bag prices
+            $fields[] = '<p class="clearfix price-container2 per_ton"  ><label id="price-label1">Per Ton Price</label><input type="text" name="perton" class="field-priceFormat" id="addPrice1" value="$0"></p>';
+            $fields[] = '<p class="clearfix price-container2 per_bag"><label id="price-label2">Per Bag Price </label><input type="text" name="perbag" class="field-priceFormat" id="addPrice2" value="$0"></p>';
+            // $fields[] = '<p class="clearfix price-container3"><label id="price-label">Total Price </label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p></div>';
+            $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type="text" name="price" class="field-priceFormat total_price" id="addPrice" value="$0"></p>';
+
+
             $return['fields'] = $fields;
         }
         echo json_encode($return);
