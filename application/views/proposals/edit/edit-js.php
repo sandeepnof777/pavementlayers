@@ -324,6 +324,7 @@
              $(".per_ton").hide();
              // $(".price-container3").hide();
 
+
             var priceType = $("#pricingType").val();
             var total;
             if ($("#addPrice").length) {
@@ -355,23 +356,33 @@
             $(".amount-container").show();
             $("#materials-container").hide();
             $("#add-materials-container").hide();
+
+              if(priceType=="Materials"){
+                   //$("#materials-container").show();
+                   $('[id="price-container"]').hide();
+                   $('[id="materials-container"]').show();
+
+   
+               }else{
+                  // $("#materials-container").hide();
+                   $('[id="price-container"]').show();
+                   $('[id="materials-container"]').hide();
+               }
             switch (priceType) {
                 case 'Total':
                     $("#price-label").html('Total Price');
                     $(".amount-container").hide();
                     break;
                 case 'Materials':
-                       $('#price-container').first().hide(); // Hide the first one
-                       $('#price-container').eq(1).hide(); // Hide the second one
-                       $("#add-materials-container").show();
+                      $("#add-materials-container").show();
                       // $(".price-container3").show();
                         var matval = (edit_flag === 1) ? $("#edit_material_type").val() : $("#addMaterial").val();
                       if(edit_flag==0){ //add  case
                         $('.amount-container').first().hide(); // Hide the first one
                         $('.amount-container').eq(1).hide(); // Hide the second one
+                       // var matval = $("#addMaterial").val();
 
                             if(matval=="Ton"){
-                                console.log("ton");
                             //  $("#price-label").html('Per Ton Price');
                                 $('.amount-container').css('display', (edit_flag === 1) ? 'none' : 'block');
                                 $('.amount-container').first().hide(); // Hide the first one
@@ -386,7 +397,6 @@
                                 }
                              }
                             else if(matval=="Ton_And_Bag"){
-
                                $('.price-container2').first().show(); // Hide the first one
                                $('.price-container2').eq(1).show(); // Hide the second one
                                $('.per_ton').show();
@@ -399,47 +409,39 @@
                                    $(".total_price").val('$' + totalValue2.toFixed(2)); // Formatting the total to 2 decimal places
                                 }
                              }else if(matval=="Bag"){
-                                console.log("BAg");
                                   $('.amount-container').first().hide(); // Hide the first one
                                   $('.amount-container').eq(1).hide(); // Hide the second one
                                   $('.per_bag').show();
                                   $('.per_ton').hide();
-                                   
                                      val2 = $("#addPrice2").val();
-                                     console.log("value",val2);
                                      $(".total_price").val(val2);
                                  
                              }    
 
 
                       }else{
-                                    $("#materials-container").show();
-
+                              $("#materials-container").show();
                               $('.amount-container').first().hide(); // Hide the first one
                               $('.amount-container').eq(1).hide(); // Hide the second one
-                             $('.amount-container').eq(2).hide(); // Hide the second one
+                              $('.amount-container').eq(2).hide(); // Hide the second one
                               $('.amount-container').eq(3).hide(); // Hide the second one
-
                                $("#materials-container").show();
                                $("#price-label").html('Total Price');
                                 var matval = $("#edit_material_type").val();
                            if(matval=="Ton"){
                                 $('.per_ton').css('display', (edit_flag === 1) ? 'block' : 'none');
-                                console.log("edit ton");
 
                                 val1 = $("#editPrice1").val();
                                 $("#editPrice").val(val1);
                                    $('.per_ton').show();
                                    $('.per_bag').hide();
                             }else if(matval=="Bag"){
-                                    console.log("edit bag");
 
                                  val2 = $("#editPrice2").val();
                                  $("#editPrice").val(val2);
                                   $('.per_bag').show();
                                   $('.per_ton').hide();
                             }else{
-                                   console.log("edit bag & ton");
 
                                 var perBagValueadd =  $("#editPrice2").val().replace('$', ''); // Remove dollar sign from perBagValue
                                 var perTonValueadd =  $("#editPrice1").val().replace('$', ''); // Remove dollar sign from perTonValue
@@ -450,17 +452,8 @@
                                  $('.per_bag').show();
 
                             }
-
-
                       }
-
-
-                    // $("#price-label").html('Material Price');
-                    // $("#materials-container").show();
-                    // $(".amount-container").hide();
-
-
-                    break;
+                     break;
                 case 'Season':
                     $("#price-label").html('Season Price');
                     //                                $(".amount-container").hide();
@@ -495,254 +488,9 @@
             }
         }
         //pricing old code
-
-        //funky pricing code
-        function updatePricingUI14() {
-             $(".per_bag").hide();
-             $(".per_ton").hide();
-             $(".snow_dynmic_container").hide();
-            var priceType = $("#pricingType").val(); 
-            if(priceType!="Materials"){
-                 $('.material-specific-fields').hide();
-                    console.log("display");
-            }else{
-                 $('.material-specific-fields').show();
-                  console.log("block");
-            }               
-            console.log("pricingType",priceType);
-            //force getting valu
-            if(edit_flag==1){
-            $(".pricing_unit_container").hide();
-            var pricingType = $("#pricingType").detach();
-            $("body").append(pricingType);
-            var priceType = $("#pricingType").val();
-          }else{
-             $(".pricing_unit_container").show();
-          }
-            //force getting value 
-             var material = $("#edit_material_type").val();
-             var total;
-             var flag; // 0 for add , 1 for edit
-            if ($("#addPrice").length) {
-                flag=0;
-                total = $("#addPrice").val();
-            } else {
-
-                     flag=1;
-                     total = $("#editPrice").val();
-            }
-            total = total.replace('$', '');
-            total = total.replace(/,/g, '');
-            var qty = $("#amountQty").val();
-            if (qty) {
-                qty = qty.replace(/,/g, '');
-            }
-            if (qty == '') {
-                qty = 0;
-            }
-            if (total > 0) {
-                $("#edit_no_price").prop('checked', false);
-            }
-            total = addCommas(parseFloat(total) * parseFloat(qty));
-            $("#totalCalculated").val('$' + total);        
-            $("#materials-container").hide();
-            $(".tiered-container").hide();
-            $(".dynamic-fields-container").hide();
-            $(".snow_dynmic_container").hide();
-            switch (priceType) {
-                case 'Total':
-                    $("#price-label").html('Total Price');
-                    $(".amount-container").hide();
-                    $(".madeleine-container").hide(); 
-                    break;
-                case 'Materials':
-                    $("#materials-container").show();
-                    $(".amount-container").hide();
-                    $(".madeleine-container").hide();
-                   // var matval = $("#material").val();
-                    var matval = (edit_flag === 1) ? $("#edit_material_type").val() : $("#material").val();
-                    if(matval=="Ton"){
-                    //  $("#price-label").html('Per Ton Price');
-                        $('.amount-container').css('display', (edit_flag === 1) ? 'none' : 'block');
-                        $('.amount-container').first().hide(); // Hide the first one
-                        $('.amount-container').eq(1).hide(); // Hide the second one
-                        $('.per_ton').css('display', (flag === 1) ? 'block' : 'none');
-                        // $(".price-container3").hide();
-                        $('.price-container3').css('display', (edit_flag === 1) ? 'block' : 'hide');
-                        $(".madeleine-container").hide();
-                        $('.per_ton').show();
-                        $('.per_bag').hide();
-                        if(edit_flag==0){
-                            val1 = $("#addPrice1").val();
-                             $("#addPrice").val(val1);
-                        }
-                     }
-                    else if(matval=="Ton_And_Bag"){
-                       $('.price-container2').first().show(); // Hide the first one
-                       $('.price-container2').eq(1).show(); // Hide the second one
-                       $('.per_ton').show();
-                       $('.per_bag').show();
-                       $('.price-container3').css('display', (edit_flag === 1) ? 'block' : 'hide');
-                        if(edit_flag==0){
-                           var perBagValueadd =  $("#addPrice2").val().replace('$', ''); // Remove dollar sign from perBagValue
-                            var perTonValueadd =  $("#addPrice1").val().replace('$', ''); // Remove dollar sign from perTonValue
-                            // Convert both values to numbers before adding
-                            var totalValue2 = parseFloat(perTonValueadd) + parseFloat(perBagValueadd);
-                           $("#addPrice").val('$' + totalValue2.toFixed(2)); // Formatting the total to 2 decimal places
-                        }
-                     }else if(matval=="Bag"){
-                          $(".madeleine-container").hide();
-                          $('.amount-container').css('display', (edit_flag === 1) ? 'none' : 'block');
-                          $('.price-container3').css('display', (edit_flag === 1) ? 'block' : 'hide');
-                          $('.per_bag').show();
-                          $('.per_ton').hide();
-                          if(edit_flag==0){
-                             val2 = $("#addPrice2").val();
-                             $("#addPrice").val(val2);
-                          }
-                     } 
-                        
-                     break;
-                case 'Season':
-                    $("#price-label").html('Season Price');
-                    //                                $(".amount-container").hide();
-                    $(".madeleine-container").hide();
- 
-                    break;
-                case 'Year':
-                    $("#price-label").html('Yearly Price');
-                    $(".amount-container").hide();
-                    $(".madeleine-container").hide();
- 
-                    break;
-                case 'Hour':
-                    $("#price-label").html('Hourly Price');
-                    $(".amount-container").hide();
-                    $(".madeleine-container").hide();
- 
-                    break;
-                case 'Trip':
-                    $("#price-label").html('Price/Trip');
-                    $("#amount-label").html('# of Trips');
-                    $(".madeleine-container").show();
-
-                    break;
-                case 'Month':
-                     $("#price-label").html('Price/Month');
-                     $(".madeleine-container").hide();
-                     $("#price-container").show();
-                     $("#amount-container").show();
- 
-                    break;
-                case 'Hour':
-                    $("#price-label").html('Hourly Price');
-                    $("#amount-label").html('# of Hours');
-                    $(".madeleine-container").hide();
- 
-
-                    break;
-                case 'Noprice':
-                    $(".amount-container").hide();
-                    $("#price-container").hide();
-                    $(".madeleine-container").hide();
- 
-                    break;
-                default:
-                    //failsage
-                    $("#price-label").html('Price');
-                    break;
-            }
-        }
-
-        //code of updatePricingUI2 start
-
-         function updatePricingUI2() {
-            $(".dynamic-fields-container").show();
-             var priceType2 = $("#madeleine").val(); 
-             var pricingType = $("#pricingType").val();
-             if(pricingType=="Materials"){
-                 $("#materials-container").show();
-                 $(".amount-container").hide();
-                 }else{
-                     $("#materials-container").hide();
-                     $(".amount-container").show();
-                 }
-                 $(".snow_dynmic_container").hide();
-                 $(".tiered-container").hide();
-
-            switch (priceType2) {
-                case 'TieredPricing':
-                     $(".tiered-container").show();
-                     $(".amount-container").hide();
-                     $(".price-container3").hide();
-                    break;              
-                default:
-                    //failsage
-                     break;
-            }
-        }
-        //code of updatePricingUI2 close
-        //Updating Material pricing start
-           function updateMaterialPricingUI() {
-             $(".dynamic-fields-container").show();
-             var materialPriceType = $("#edit_material_type").val().trim();; 
-             $(".snow_dynmic_container").hide();
-             $("#materials-container").show();
-             $(".amount-container").hide();
-             $(".tiered-container").hide();
-             // $(".price-container3").hide(); 
-            $('.price-container3').css('display', (edit_flag === 1) ? 'block' : 'hide');
-
-            switch (materialPriceType) {
-                case 'Ton':
-                      $(".per_ton").show();
-                      $(".per_bag").hide();
-                      val1 = $("#editPrice1").val();
-                      $("#editPrice").val(val1);
-                    break;
-                case 'Bag':
-                      $(".per_ton").hide();
-                      $(".per_bag").show();
-                      val2 = $("#editPrice2").val();
-                      $("#editPrice").val(val2);
-                break;
-                case 'Ton_And_Bag':
-                       var perBagValue =  $("#editPrice2").val();
-                       var perTonValue =  $("#editPrice1").val();
-                        var perBagValue =  $("#editPrice2").val().replace('$', ''); // Remove dollar sign from perBagValue
-                        var perTonValue =  $("#editPrice1").val().replace('$', ''); // Remove dollar sign from perTonValue
-                        // Convert both values to numbers before adding
-                        var totalValue = parseFloat(perTonValue) + parseFloat(perBagValue);
-                        $(".per_ton").show();
-                        $(".per_bag").show();
-                        $(".price-container2").show();
-                         $("#editPrice").val('$' + totalValue.toFixed(2)); // Formatting the total to 2 decimal places
-
-                 break;
-              
-                default:
-                    //failsage
-                     break;
-            }
-        }
-        //Updateing Material pricing close
-
-       // // $("#pricingType").live('change', function () {
-       //          $('body').on('change', '#pricingType,#material', function() {
-
-       //      updatePricingUI();
-       //  });
-       //  $("#amountQty, #addPrice, #editPrice, #addPrice1, #addPrice2,editPrice1,editPrice2").live('keyup', function () {
-       //       updatePricingUI();
-       //  });
-
-       // // $("#madeleine").live('change', function () {
-       //     $('body').on('change', '#madeleine', function() {
-       //          updatePricingUI2();
-       //  });
+  
 
         $('body').on('change', '#edit_material_type', function() {
-                    //  updateMaterialPricingUI();
                     updatePricingUI();
         });
 
@@ -753,9 +501,9 @@
             updatePricingUI();
         });
 
-           $('body').on('change', '#addMaterial', function() {
-                       updatePricingUI();
-          });
+       $('body').on('change', '#addMaterial', function() {
+                   updatePricingUI();
+      });
 
         
 
@@ -772,12 +520,7 @@
                 $('.per_ton').show();
                 $('.per_bag').show();
             });
-        }); 
-
-         $(document).on('keyup', '#editPrice1, #editPrice2', function () {
-            updateMaterialPricingUI();
-        });
-
+        });  
 
 
         $('#serviceCategory option').attr('selected', false);
