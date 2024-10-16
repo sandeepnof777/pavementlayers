@@ -5819,24 +5819,21 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                     $pricingTypeCode .= '<option' . $selected . ' value="' . $type . '">' . $label . '</option>';
                 }
                 $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox"' . $optionChecked . ' name="editOptional" id="editOptional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
-                $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p> ';
+                $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="editPricingType">' . $pricingTypeCode . '</select></p> ';
                 $selected_material_val = $service->getMaterial();
                 $perTon = ($selected_material_val=="Ton") ? "selected" : "";
                 $perBag = ($selected_material_val=="Bag") ? "selected" : "";
                 $perTonBag = ($selected_material_val=="Ton_And_Bag") ? "selected" : "";
                 $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label><select name="material" id="edit_material_type"><option value="Ton" '.$perTon.'>Per Ton</option><option  value="Bag" '.$perBag.'>Per Bag</option><option value="Ton_And_Bag" '.$perTonBag.'>Per Ton and Per Bag</option></select></p>'; 
                 $fields[] = '<input type="hidden" name="getSeletedValue"  id="getSeletedValue" value="'. $selected_material_val .'">';
-                // $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type = "text" name = "price" class="field-priceFormat" id = "editPrice" value = "' . $service->getPrice() . '"></p> ';
-                $fields[] = '<p class="clearfix amount-container"><label id="amount-label">Frequency</label><input type = "text" name = "amountQty" class="field-numberFormat" id = "amountQty" value = "' . $service->getAmountQty() . '"></p>';
+                $fields[] = '<p class="clearfix amount-container"><label id="amount-label">Frequency</label><input type = "text" name = "amountQty" class="field-numberFormat" id = "amountQtyEdit" value = "' . $service->getAmountQty() . '"></p>';
+                $fields[] = '<p class="clearfix price-container2  per_ton"><label id="price-label1">Per Ton Price</label><input type="text" name="perton" class="field-priceFormat" id="editPrice1" value="'. $service->getPriceTon() .'"></p>';
+                $fields[] = '<p class="clearfix price-container2  per_bag"><label id="price-label2">Per Bag Price </label><input type="text" name="perbag" class="field-priceFormat" id="editPrice2" value="'. $service->getPriceBag() .'"></p>';
+                $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type = "text" name = "price" class="field-priceFormat" id = "editPrice" value = "' . $service->getPrice() . '"></p> ';
                 $fields[] = '<p class="clearfix amount-container">
                 <label id="total">Total Amount</label>
                 <input type="text" class="priceFormat" disabled value="$0" id="totalCalculated" />
                 </p> ';
-
-                $fields[] = '<p class="clearfix price-container2  per_ton"><label id="price-label1">Per Ton Price</label><input type="text" name="perton" class="field-priceFormat" id="editPrice1" value="'. $service->getPriceTon() .'"></p>';
-                $fields[] = '<p class="clearfix price-container2  per_bag"><label id="price-label2">Per Bag Price </label><input type="text" name="perbag" class="field-priceFormat" id="editPrice2" value="'. $service->getPriceBag() .'"></p>';
-                // $fields[] = '<p class="clearfix price-container3"><label id="price-label">Total Price </label><input type="text" name="price" class="field-priceFormat" id="editPrice" value="'. $service->getPrice() .'"></p>';
-                $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type = "text" name = "price" class="field-priceFormat" id = "editPrice" value = "' . $service->getPrice() . '"></p> ';
 
 
             } else {
@@ -6604,16 +6601,11 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
             }
             
             $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox" name="optional" id="optional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
-            $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
+            $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="addPricingType">' . $pricingTypeCode . '</select></p>';
             // $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
             //         $this->materials, array(), ' id="material"') . '</p>';
             // $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p>';
-            $fields[] = '<p class="clearfix amount-container"><label id="amount-label">Frequency</label><input type="text" name="amountQty" class="field-numberFormat" id="amountQty" value="0">
-                </p>
-             <p class="clearfix amount-container">
-            <label id="total">Total Amount</label>
-            <input type="text" class="priceFormat" disabled value="$0" id="totalCalculated" />
-            </p>';             
+                     
  
             $material = [
                 'Ton' => 'Per Ton',
@@ -6630,7 +6622,12 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
             $fields[] = '<p class="clearfix price-container2 per_bag"><label id="price-label2">Per Bag Price </label><input type="text" name="perbag" class="field-priceFormat" id="addPrice2" value="$0"></p>';
             // $fields[] = '<p class="clearfix price-container3"><label id="price-label">Total Price </label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p></div>';
             $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type="text" name="price" class="field-priceFormat total_price" id="addPrice" value="$0"></p>';
-
+            $fields[] = '<p class="clearfix amount-container"><label id="amount-label">Frequency</label><input type="text" name="amountQty" class="field-numberFormat" id="amountQtyAdd" value="0">
+                        </p>
+                    <p class="clearfix amount-container">
+                    <label id="total">Total Amount</label>
+                    <input type="text" class="priceFormat" disabled value="$0" id="totalCalculated" />
+                    </p>';  
 
             $return['fields'] = $fields;
         }

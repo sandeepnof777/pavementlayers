@@ -322,10 +322,16 @@
   function updatePricingUI() {
              $(".per_bag").hide();
              $(".per_ton").hide();
-             // $(".price-container3").hide();
 
+             if(edit_flag==1){
+                 var priceType = $("#editPricingType").val();
+                 var qty = $("#amountQtyEdit").val();
 
-            var priceType = $("#pricingType").val();
+             }else{
+                 var priceType = $("#addPricingType").val();
+                 var qty = $("#amountQtyAdd").val();
+
+             }
             var total;
             if ($("#addPrice").length) {
                 total = $("#addPrice").val();
@@ -334,7 +340,6 @@
             }
             total = total.replace('$', '');
             total = total.replace(/,/g, '');
-            var qty = $("#amountQty").val();
             if (qty) {
                 qty = qty.replace(/,/g, '');
             }
@@ -347,26 +352,26 @@
                 $("#edit_no_price").prop('checked', false);
             }
 
-            // console.log("total",total);
-            // console.log("qty",qty);
 
             total = addCommas(parseFloat(total) * parseFloat(qty));
+  
+           // $("#totalCalculated").val('$' + total);
+            $(".priceFormat").val('$' + total);
 
-            $("#totalCalculated").val('$' + total);
             $(".amount-container").show();
-            $("#materials-container").hide();
             $("#add-materials-container").hide();
-
-              if(priceType=="Materials"){
+               if(priceType=="Materials"){
                    //$("#materials-container").show();
                    $('[id="price-container"]').hide();
                    $('[id="materials-container"]').show();
+                    $('.amount-container').first().hide(); // Hide the first one
+                    $('.amount-container').eq(1).hide(); // Hide the second one
+                  }else{
 
-   
-               }else{
-                  // $("#materials-container").hide();
                    $('[id="price-container"]').show();
                    $('[id="materials-container"]').hide();
+                    $('.amount-container').first().show(); // Hide the first one
+                    $('.amount-container').eq(1).show(); // Hide the second one
                }
             switch (priceType) {
                 case 'Total':
@@ -378,8 +383,6 @@
                       // $(".price-container3").show();
                         var matval = (edit_flag === 1) ? $("#edit_material_type").val() : $("#addMaterial").val();
                       if(edit_flag==0){ //add  case
-                        $('.amount-container').first().hide(); // Hide the first one
-                        $('.amount-container').eq(1).hide(); // Hide the second one
                        // var matval = $("#addMaterial").val();
 
                             if(matval=="Ton"){
@@ -492,21 +495,23 @@
 
         $('body').on('change', '#edit_material_type', function() {
                     updatePricingUI();
-        });
+        }); 
 
-         $("#pricingType").live('change', function () {
-            updatePricingUI();
-        });
-        $("#amountQty, #addPrice, #editPrice,#addPrice1,#addPrice2,editPrice1,editPrice2").live('keyup', function () {
+        $(document).on('change', '#addPricingType', function () {
+             updatePricingUI();
+         });
+        $(document).on('change', '#editPricingType', function () {
+             updatePricingUI();
+         });
+          
+        $("#amountQtyAdd,#amountQtyEdit, #addPrice, #editPrice,#addPrice1,#addPrice2,editPrice1,editPrice2").live('keyup', function () {
             updatePricingUI();
         });
 
        $('body').on('change', '#addMaterial', function() {
                    updatePricingUI();
-      });
-
+       });
         
-
        $(document).ready(function () {
             var edit_flag = 0; // Initialize edit_flag
 
@@ -768,15 +773,14 @@
 
             postData.map_area_data = $("#map_area_data").val();
             postData.price = $("#addPrice").val();
-            postData.amountQty = $("#amountQty").val();
-            postData.pricingType = $("#pricingType").val();
+            postData.amountQty = $("#amountQtyAdd").val();
+            postData.pricingType = $("#addPricingType").val();
           //  postData.material = $("#material").val();
             postData.material = $("#addMaterial").val();
             postData.excludeFromTotals = $('#exclude_total').prop('checked') ? '1' : 0;
             postData.texts = [];
 
             //adding value for tiered pricing
-            postData.snowPricingType = $("#madeleine").val();
             postData.serviceDescriptions = [];
             postData.occurrences = [];
 
@@ -1623,8 +1627,8 @@
             postData.isHideInProposal = $('#hide_from_proposal').prop('checked') ? '1' : 0;
             postData.price = $("#editPrice").val();
             postData.edit_map_area_data = $("#edit_map_area_data").val();
-            postData.amountQty = $("#amountQty").val();
-            postData.pricingType = $("#pricingType").val();
+            postData.amountQty = $("#amountQtyEdit").val();
+            postData.pricingType = $("#editPricingType").val();
             postData.material = $("#edit_material_type").val();
             postData.texts = [];
             postData.text_ids = [];
@@ -1817,21 +1821,7 @@
             var serviceId = $(this).data('id');
             var companyId = '<?php echo $proposal->getOwner()->getCompanyId(); ?>';
             var proposalId = '<?php echo $proposal->getProposalId(); ?>';
-             $(this).trigger('mouseout');
-
-             var material = $("#edit_material_type").val();
-             if(material=="Ton" || material=="Bag" ||  material=="Ton_And_Bag"){
-                $('.amount-container').css('display', '');
-                $('.amount-container').first().hide(); // Hide the first one
-                $('.amount-container').eq(1).hide(); // Hide the second one
-              }
-              if(material=="Ton_And_Bag"){
-                $('.price-container2').first().show(); // Hide the first one
-                $('.price-container2').eq(1).show(); // Hide the second one
-                $('.per_ton').show();
-                $('.per_bag').show();
-              }
-
+             $(this).trigger('mouseout'); 
             $('.btn-edit').tipTip('destroy');
             $('#show_edit_alert').hide();
             $.getJSON('<?php echo site_url('ajax/getProposalServiceDetails') ?>/' + $(this).attr('rel'), function (data) {
@@ -2135,7 +2125,6 @@
                     $("#editService").dialog('open');
                     $("#editServiceTexts").sortable('refresh');
                     updatePricingUI();
-                   // updatePricingUI2();
                     initButtons();
                     initTiptip();
                     reset_service_uploader();
