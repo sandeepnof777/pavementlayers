@@ -6602,11 +6602,6 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
             
             $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox" name="optional" id="optional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
             $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="addPricingType">' . $pricingTypeCode . '</select></p>';
-            // $fields[] = '<p class="clearfix" id="materials-container"><label>Choose Material</label>' . form_dropdown('material',
-            //         $this->materials, array(), ' id="material"') . '</p>';
-            // $fields[] = '<p class="clearfix" id="price-container"><label id="price-label">Price</label><input type="text" name="price" class="field-priceFormat" id="addPrice" value="$0"></p>';
-                     
- 
             $material = [
                 'Ton' => 'Per Ton',
                 'Bag' => 'Per Bag',
