@@ -5258,9 +5258,38 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                 $proposal_service->setPrice($tonPrice); 
             }
             //adding price for price ton & price bag
-        // Capture serviceDescriptions and occurrence, and save as JSON
-       
-        // Save JSON data to snow_service_descriptions_price field
+          // Capture serviceDescriptions and occurrence, and save as JSON
+          $snowPricingType = $this->input->post('snowPricingType');
+          $serviceDescriptions = $this->input->post('serviceDescriptions');
+          $occurrences = $this->input->post('occurrences');
+                  // Initialize arrays to hold valid data
+          $validServiceDescriptions = [];
+          $validOccurrences = [];
+          $totalOccurences=0;
+          // Loop through both arrays and check for empty values
+          for ($i = 0; $i < count($serviceDescriptions); $i++) {
+              $description = trim($serviceDescriptions[$i]);
+              $occurrence = trim($occurrences[$i]);
+              // Only include non-empty values
+              if (!empty($description) && !empty($occurrence)) {
+                  $validServiceDescriptions[] = $description;
+                  $validOccurrences[] = $occurrence;
+                  $totalOccurences = $totalOccurences + str_replace('$', '', $occurrence);
+              }
+          }
+          if($totalOccurences>0){
+              //add a total occurence and set into price
+                $proposal_service->setPrice($totalOccurences); 
+            }
+              // Prepare data in JSON format with filtered data
+              $jsonData = json_encode([
+                  'serviceDescriptions' => $validServiceDescriptions,
+                  'occurrences' => $validOccurrences
+              ]);                    
+          
+              $proposal_service->setSnowServiceDescriptionsPrice($jsonData);
+              $proposal_service->setSnowPriceType($snowPricingType);
+          // Save JSON data to snow_service_descriptions_price field
 
         // Is it tax?
         $proposal_service->setTax(0);
@@ -5763,7 +5792,7 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                         $fieldCodes .= '<input class="field field-numberFormat" type="number" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $fieldValue . '">';
                         break;
                     case 'text':
-                        $fieldCodes .= '<input class="field" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $fieldValue . '">';
+                        $fieldCodes .= '<input class="field field-numberFormat" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $fieldValue . '">';
                         break;
                     case 'select':
                         $fieldCodes .= '<select name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" class="field">';
@@ -5819,7 +5848,47 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                     $pricingTypeCode .= '<option' . $selected . ' value="' . $type . '">' . $label . '</option>';
                 }
                 $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox"' . $optionChecked . ' name="editOptional" id="editOptional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
-                $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="editPricingType">' . $pricingTypeCode . '</select></p> ';
+                $fields[] = '<p class="clearfix"><label id="edit-pricing-type-label">Pricing Type</label><select name="pricingType" id="editPricingType">' . $pricingTypeCode . '</select></p> ';
+               // Generate Service Descriptions and Occurrences edit tiered pricing
+                  $snow_pricing_type = $service->getSnowPriceType();
+                    $tieredPricingArray = [
+                    'SetPrice' => 'Set Price',
+                    'TieredPricing' => 'Tiered Pricing',
+                ];            
+                $fields[] = '<p class="clearfix tiered-pricing-container" style="display:none;">
+                                <label id="editpricingUnit">Pricing Unit</label>' . 
+                                form_dropdown('editTieredPrcing', $tieredPricingArray, $snow_pricing_type, 'id="editTieredPrcing"') . 
+                            '</p>';
+
+                // Fetch service descriptions and occurrences
+                        $serviceValue = $service->getSnowServiceDescriptionsPrice(); // Assuming it returns a JSON object
+                        $serviceData = json_decode($serviceValue, true); // Decode the JSON into an 
+                    if (!empty($serviceData['serviceDescriptions']) && !empty($serviceData['occurrences'])) {
+                        $serviceDescriptions = $serviceData['serviceDescriptions'];
+                        $occurrences = $serviceData['occurrences'];
+
+                        // Ensure both arrays have the same length
+                        $count = min(count($serviceDescriptions), count($occurrences));
+
+                        for ($i = 0; $i < $count; $i++) {
+                            // Service Descriptions field
+                            $fields[] = '<p class="clearfix tiered-container"><label id="description-label">Service Descriptions ' . ($i + 1) . '</label>
+                                        <textarea id="serviceDescriptions" name="editServiceDescriptions[]" rows="4" cols="50">' . htmlspecialchars($serviceDescriptions[$i]) . '</textarea>
+                                        </p>';
+                            // Occurrence field
+                            $fields[] = '<p class="clearfix tiered-container">
+                                        <label id="per_occurrence_' . ($i + 1) . '">Per Occurrence ' . ($i + 1) . '</label>
+                                        <input type="text" class="occurrence" name="editOccurrences[]" value="' . htmlspecialchars($occurrences[$i]) . '" id="occurrence_' . ($i + 1) . '" />
+                                        </p>';
+                        }
+                    }
+
+                    // $fields[] = '<div class="dynamic-fields-container"></div>';
+                    $fields[] ='<p class="clearfix edit-tiered-container"><button type="button" id="edit_pricing_tier" class="pricing_tier update-button addIcon ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Pricing Tier</span></button></p>';
+                    $fields[] ='<p class="error clearfix error-tiered-container" style="display:none;"><div style="display:none;" class="error snow_dynmic_container"></div></p>';
+                    //  Add a container for dynamically generated fields 
+
+               
                 $selected_material_val = $service->getMaterial();
                 $perTon = ($selected_material_val=="Ton") ? "selected" : "";
                 $perBag = ($selected_material_val=="Bag") ? "selected" : "";
@@ -5942,6 +6011,7 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
     public function proposalEditService()
     {
 
+ 
         $this->load->database();
         /* @var $service models\Proposal_services */
         $service = $this->em->find('models\Proposal_services', $this->input->post('serviceId'));
@@ -6023,6 +6093,41 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
 
                 // Set the price with a dollar sign
             }
+
+            //Update data for tiered price
+                    $snowPricingType = $this->input->post('snowPricingType');
+                    $serviceDescriptions = $this->input->post('serviceDescriptions');
+                    $occurrences = $this->input->post('occurrences');
+                            // Initialize arrays to hold valid data
+                    $validServiceDescriptions = [];
+                    $validOccurrences = [];
+                    $totalOccurences=0;
+                    // Loop through both arrays and check for empty values
+                    for ($i = 0; $i < count($serviceDescriptions); $i++) {
+                        $description = trim($serviceDescriptions[$i]);
+                        $occurrence = trim($occurrences[$i]);
+                        // Only include non-empty values
+                        if (!empty($description) && !empty($occurrence)) {
+                            $validServiceDescriptions[] = $description;
+                            $validOccurrences[] = $occurrence;
+                            $totalOccurences = $totalOccurences + str_replace('$', '', $occurrence);
+                        }
+                    }
+                    if($totalOccurences>0){
+                    //add a total occurence and set into price
+                        $service->setPrice($totalOccurences); 
+                    }
+                    // Prepare data in JSON format with filtered data
+                    $jsonData = json_encode([
+                        'serviceDescriptions' => $validServiceDescriptions,
+                        'occurrences' => $validOccurrences
+                    ]);                    
+                
+                    $service->setSnowServiceDescriptionsPrice($jsonData);
+                    $service->setSnowPriceType($snowPricingType);
+                // Save JSON data to snow_service_descriptions_price field
+
+            // update data for tiered price
 
             $this->em->persist($service);
             //save texts
@@ -6566,7 +6671,7 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                         $fieldCode .= '<input class="field field-numberFormat" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $field->getFieldValue() . '">';
                         break;
                     case 'text':
-                        $fieldCode .= '<input class="field" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $field->getFieldValue() . '">';
+                        $fieldCode .= '<input class="field field-numberFormat" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $field->getFieldValue() . '">';
                         break;
                     case 'select':
                         $fieldCode .= '<select name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" class="field">';
@@ -6599,9 +6704,31 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
             foreach ($this->servicePricingTypes as $label => $type) {
                 $pricingTypeCode .= '<option value="' . $type . '">' . $label . '</option>';
             }
-            
             $fields[] = '<p class="clearfix"><label>Optional Service</label><input type="checkbox" name="optional" id="optional" style="width: 14px; padding: 0; margin: 3px 0;"></p>';
-            $fields[] = '<p class="clearfix"><label>Pricing Type</label><select name="pricingType" id="addPricingType">' . $pricingTypeCode . '</select></p>';
+            $fields[] = '<p class="clearfix"><label id="add-pricing-lable">Pricing Type</label><select name="pricingType" id="addPricingType">' . $pricingTypeCode . '</select></p>';
+            //add code for tiered price start
+            //  $fields[] = '<p class="clearfix tiered_p" style="display:none;"><label >Pricing Unit</label><select name="pricingType" id="pricingType">' . $pricingTypeCode . '</select></p>';
+             $tieredPricingArray = [
+                'SetPrice' => 'Set Price',
+                'TieredPricing' => 'Tiered Pricing',
+            ];            
+            $fields[] = '<p class="clearfix tiered-pricing-container" style="display:none;">
+                            <label id="pricingUnit">Pricing Unit</label>' . 
+                            form_dropdown('addTieredPrcing', $tieredPricingArray, array(), 'id="addTieredPrcing"') . 
+                        '</p>';
+             $fields[] = '<p class="clearfix tiered-container" style="display:none;"><label id="description-label">Service Descriptions(1)</label>
+                 <textarea id="serviceDescriptions" name="serviceDescriptions[]" rows="4" cols="50"></textarea>
+                </p>
+                <p class="clearfix tiered-container"  style="display:none;">
+                <label id="per_occurrence">Per Occurrence</label>
+                <input type="text" class="occurrence" name="occurrences[]"   value="$0" id="occurrence" />                 
+                </p>';
+             //  Add a container for dynamically generated fields 
+             $fields[] = '<div class="dynamic-fields-container" style="display:none;"></div>';
+             $fields[] ='<p class="clearfix tiered-container" style="display:none;"><button type="button" id="add_pricing_tier" class="pricing_tier update-button addIcon ui-button ui-widget ui-state-default ui-corner-all ui-button-text-only" role="button" aria-disabled="false"><span class="ui-button-text">Pricing Tier</span></button></p>';
+             $fields[] ='<p class="error clearfix error-tiered-container" style="display:none;"><div style="display:none;" class="error snow_dynmic_container"></div></p>';
+             //add code for tiered price close
+
             $material = [
                 'Ton' => 'Per Ton',
                 'Bag' => 'Per Bag',
@@ -6706,7 +6833,7 @@ $this->session->set_userdata('pStatusFilterTo', $this->input->post('accFilterTo'
                             $fieldCodes .= '<input class="field field-numberFormat" type="number" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $field->getFieldValue(). '">';
                             break;
                         case 'text':
-                            $fieldCode .= '<input class="field" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $field->getFieldValue() . '">';
+                            $fieldCode .= '<input class="field field-numberFormat" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $field->getFieldValue() . '">';
                             break;
                         case 'texttext':
                             $fieldCode .= '<input class="field" type="text" name="' . $field->getFieldCode() . '" id="' . $field->getFieldCode() . '" value="' . $field->getFieldValue() . '">';

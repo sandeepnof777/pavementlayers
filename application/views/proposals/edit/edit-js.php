@@ -8,6 +8,7 @@
             $("#estimatePreviewDialog").dialog().parent().css('height', '85%');
         }
     var edit_flag = 0; // Global variable to track the edit flag
+     var tierCount;
 </script>
 <div id="workOrderDialog" title="Preview Work Order" style="display:none;">
 <p style="font-weight: bold;width: 700px;position: absolute;font-size: 14px;top: 3px;"><span style="position:absolute"><span style="display: block; float: left;  color: #595959; text-align: left; margin-right: 10px;"><i class="fa fw fa-file-pdf-o"></i> Project: </span><span class="shadowz" style="float:left"><a class="dialog_project_name" href="#" ><?=$proposal->getProjectName();?></a></span></span><br/>
@@ -322,10 +323,17 @@
   function updatePricingUI() {
              $(".per_bag").hide();
              $(".per_ton").hide();
-
+             $(".tiered-pricing-container").hide();
+             $(".tiered-container").hide();
+             $("#add-pricing-lable").html('Pricing Type');
+             $("#edit-pricing-type-label").html("Pricing Type");
              if(edit_flag==1){
                  var priceType = $("#editPricingType").val();
-                 var qty = $("#amountQtyEdit").val();
+                 var qty = $("#amountQtyEdit").val();               
+                console.log("prictype",priceType);
+                console.log("edit_flag",edit_flag);
+
+
 
              }else{
                  var priceType = $("#addPricingType").val();
@@ -470,8 +478,30 @@
                     $(".amount-container").hide();
                     break;
                 case 'Trip':
-                    $("#price-label").html('Price/Trip');
+                    $("#add-pricing-lable").html('Pricing Unit');
+                   // $("#price-label").html('Price/Trip');
+                    $("#pricingUnit").html('Pricing Type');
                     $("#amount-label").html('# of Trips');
+                    $(".tiered-pricing-container").show();
+                    $addTieredPrcing = $("#addTieredPrcing").val();
+                    $editTieredPrcing = $("#editTieredPrcing").val();
+                    if(edit_flag==1){
+                            $("#editpricingUnit").html('Pricing Type');
+                            $("#edit-pricing-type-label").html("Pricing Unit");
+                        }
+                    if($addTieredPrcing=="TieredPricing" || $editTieredPrcing=="TieredPricing"){
+                        console.log("add tiered hide & show",$addTieredPrcing);
+                        console.log("edit tiered hide & show",$editTieredPrcing);
+
+                        $(".tiered-container").show();
+                        $('.amount-container').hide(); // Hide the first one
+                        $(".price-container3").hide();
+                        $('[id="price-container"]').hide(); 
+                    }else{
+                        $(".tiered-container").hide();
+                        $('.amount-container').show(); // Hide the first one
+                        $('[id="price-container"]').show();
+                    }
                     break;
                 case 'Month':
                     $("#price-label").html('Price/Month');
@@ -511,10 +541,14 @@
        $('body').on('change', '#addMaterial', function() {
                    updatePricingUI();
        });
+       $(document).on('change', '#addTieredPrcing,#editTieredPrcing', function () {
+             updatePricingUI();
+         });
+
+       
         
        $(document).ready(function () {
             var edit_flag = 0; // Initialize edit_flag
-
             // Bind click event to both the cancel button and the close icon
             $(".closeIcon, .ui-dialog-titlebar-close").on("click", function (e) {
                 e.preventDefault(); // Prevent the default action (if necessary, for links)
@@ -524,6 +558,8 @@
                 $('.price-container2').eq(1).show(); // Hide the second one
                 $('.per_ton').show();
                 $('.per_bag').show();
+                tierCount = $('textarea[name="editServiceDescriptions[]"]').length;
+
             });
         });  
 
@@ -775,12 +811,13 @@
             postData.price = $("#addPrice").val();
             postData.amountQty = $("#amountQtyAdd").val();
             postData.pricingType = $("#addPricingType").val();
-          //  postData.material = $("#material").val();
             postData.material = $("#addMaterial").val();
             postData.excludeFromTotals = $('#exclude_total').prop('checked') ? '1' : 0;
             postData.texts = [];
 
             //adding value for tiered pricing
+            postData.snowPricingType = $("#addTieredPrcing").val();
+
             postData.serviceDescriptions = [];
             postData.occurrences = [];
 
@@ -915,7 +952,7 @@
                                     checkboxByName.closest('span').addClass('checked');
                                     //console.log("Checked by Name: checkbox_" + value);
                                 } else {
-                                    console.log("Checkbox not found by Name: checkbox_" + value);
+                                    //console.log("Checkbox not found by Name: checkbox_" + value);
                                 }
                             });
                         }else{console.log("custom text not avilabel for",data.service_id)}
@@ -946,7 +983,7 @@
                                         checkboxByName.closest('span').removeClass('unchecked').addClass('checked');
                                         //console.log("checked by Name: textcat-" + index);
                                     } else {
-                                        console.log("Checkbox not found by Name: textcat-" + index);
+                                        //console.log("Checkbox not found by Name: textcat-" + index);
                                     }
                                 }
                                 });
@@ -1375,7 +1412,7 @@
                                         checkboxByName.closest('span').removeClass('checked').addClass('unchecked');
                                        // console.log("Unchecked by Name: checkbox_" + value);
                                     } else {
-                                        console.log("Checkbox not found by Name: checkbox_" + value);
+                                        //console.log("Checkbox not found by Name: checkbox_" + value);
                                     }
                                 });
                             }else{console.log("custom text not avilabel for this service",data.service_id);}
@@ -1416,7 +1453,7 @@
                                                     checkboxByName.closest('span').removeClass('checked').addClass('unchecked');
                                              }
                                          } else {
-                                            console.log("Checkbox not found by Name: textcat-" + index);
+                                           // console.log("Checkbox not found by Name: textcat-" + index);
                                         }
                                
                                 });
@@ -1637,6 +1674,20 @@
             postData.tonPrice = $("#editPrice1").val();
             postData.bagPrice = $("#editPrice2").val();
             // adding value for Per Ton and Per Bag close
+            // Loop through all dynamically created service descriptions and occurrences tiered
+            postData.snowPricingType = $("#editTieredPrcing").val();
+            postData.serviceDescriptions = [];
+            postData.occurrences = [];
+                $('textarea[name="editServiceDescriptions[]"]').each(function () {
+                postData.serviceDescriptions.push($(this).val()); // Collect the value of each description
+                });
+
+            $('input[name="editOccurrences[]"]').each(function () {
+                postData.occurrences.push($(this).val()); // Collect the value of each occurrence
+                });
+
+            console.log("postdataocc",postData.occurrences);
+
             //get texts
             var k = 0;
             $("#editServiceTexts div.text").each(function () {
@@ -11204,46 +11255,83 @@
 
 //add a dynmic generated filed
 $(document).ready(function() {
-    let tierCount = 2; // to count how many tiers are added
+        tierCount = 2; // to count how many tiers are added
         const maxTiers = 10; // Maximum allowed tiers
 
-    $('body').on('click', '#pricing_tier', function() {
+    $('body').on('click', '#add_pricing_tier,#edit_pricing_tier', function() {
         // Create dynamic textarea and text field for occurrence
-         checkServiceDescriptionsCount();
+        $(".dynamic-fields-container").show();
+        $(".tiered-container").show();
+        // let existtierCount = checkServiceDescriptionsCount();
+         var existtierCount = $('textarea[name="editServiceDescriptions[]"]').length;
+         console.log("countfff",existtierCount);
+
 
         if (tierCount > maxTiers) {
+            console.log("count is ",existtierCount);
+
             // alert("You can only add up to 10 tiers.");
-            $(".snow_dynmic_container").show();
+            $('.snow_dynmic_container').first().show(); // Hide the first one
+            $('.error-tiered-container').first().show(); // Hide the first one
             $(".snow_dynmic_container").text("You can only add up to 10 tiers.");
             return;
         }
+        
+        let newFields; // Declare newFields outside of if-else
 
-        let newFields = `
-            <div class="clearfix dynamic-tier" id="tier-${tierCount}">
+         // Count existing tiers in edit mode
+         if ($(this).attr('id') === 'edit_pricing_tier') {
+            console.log("showingEditCont",tierCount);
+            console.log("existentcount",existtierCount);
+
+            // Count the number of existing tiers by looking at elements with the class '.dynamic-tier'
+            tierCount=existtierCount+1;
+
+        }  
+        if(edit_flag==1){
+             newFields = `
+            <div class="clearfix dynamic-tier" id="edit-tier-${tierCount}">
+                <p>
+                    <label for="serviceDescriptions-${tierCount}">Service Descriptions (${tierCount})</label>
+                    <textarea id="serviceDescriptions-${tierCount}" name="editServiceDescriptions[]" rows="4" cols="50"></textarea>
+                </p>
+                <p>
+                    <label for="occurrence-${tierCount}">Per Occurrence (${tierCount})</label>
+                    <input style="margin-top:5px;" type="text" id="editOccurrence-${tierCount}" class="occurrence" value="$0" name="editOccurrences[]">
+                </p>
+            </div>`;
+           // $('#editServiceFields').append(newFields);
+            $('#editServiceFields').find('#edit_pricing_tier').before(newFields);
+
+
+        }else{
+             newFields = `
+            <div class="clearfix dynamic-tier" id="add-tier-${tierCount}">
                 <p>
                     <label for="serviceDescriptions-${tierCount}">Service Descriptions (${tierCount})</label>
                     <textarea id="serviceDescriptions-${tierCount}" name="serviceDescriptions[]" rows="4" cols="50"></textarea>
                 </p>
                 <p>
-                    <label for="occurrence-${tierCount}">Per Occurrence</label>
+                    <label for="occurrence-${tierCount}">Per Occurrence (${tierCount})</label>
                     <input style="margin-top:5px;" type="text" id="occurrence-${tierCount}" class="occurrence" value="$0" name="occurrences[]">
                 </p>
             </div>`;
-        
-        // Append the new fields to the dynamic-fields-container div
-        $('.dynamic-fields-container').append(newFields);
-        
+            // Append the new fields to the dynamic-fields-container div
+            $('.dynamic-fields-container').append(newFields);
+        }
         // Increment the tier count for next addition
         tierCount++;
     });
 });
+
+ 
 
 
  
   function checkServiceDescriptionsCount() {
             // Count the number of textareas with name "serviceDescriptions[]"
            // var count = $('textarea[name="serviceDescriptions[]"]').length;
-            var count = $('.editServiceFields textarea[name="serviceDescriptions[]"]').length;
+            var count = $('.editServiceFields textarea[name="editServiceDescriptions[]"]').length;
 
             // Check if the count exceeds 10
             if (count > 10) {
@@ -11252,7 +11340,7 @@ $(document).ready(function() {
                 $(".snow_dynmic_container").text("You can only add up to 10 tiers.");
 
             }
-        }
+         }
 
         // Call the function initially
         checkServiceDescriptionsCount();
